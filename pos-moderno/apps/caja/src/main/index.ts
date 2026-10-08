@@ -7,6 +7,7 @@ import {
   iniciarSyncAutomatico,
   listarPendientes,
   registrarVentaLocal,
+  setAuthToken,
   sincronizar,
 } from './sync/syncService';
 
@@ -52,6 +53,10 @@ ipcMain.handle(
   (_e, ip: string, puerto: number, datos: DatosTicket) =>
     imprimirPorRed(ip, puerto, datos),
 );
+
+ipcMain.handle('auth:setToken', (_e, token: string | null) => {
+  setAuthToken(token);
+});
 
 // Proceso de venta offline: guardar local + sincronizar con el servidor.
 ipcMain.handle('ventas:registrar', async (_e, venta: RegistrarVentaDTO) => {

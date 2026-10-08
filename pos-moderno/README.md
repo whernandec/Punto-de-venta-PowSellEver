@@ -52,7 +52,8 @@ Endpoints:
 - `GET|POST /compras` — **registro transaccional de una compra** (entrada de inventario)
 - `GET /inventario` · `GET /inventario/bajo-minimo` · `GET /inventario/:idProducto/kardex`
 - `POST /inventario/ajuste` — ajuste manual de stock (entrada/salida con kardex)
-- `GET /reportes/ventas` (JSON) · `GET /reportes/ventas.xlsx` — **exportación Excel real** (ExcelJS)
+- `GET /reportes/ventas` (JSON) · `GET /reportes/ventas.xlsx` (Excel/ExcelJS) · `GET /reportes/ventas.pdf` (PDF/pdfkit)
+- **Todos los endpoints requieren `Authorization: Bearer <JWT>`** salvo `/health` y `/auth/login`.
 - `GET|POST /usuarios`, `PATCH|DELETE /usuarios/:id` — gestión de usuarios (baja lógica)
 - `GET /empresa` · `PUT /empresa/:id` — configuración de la empresa
 - `GET|POST /clientes`, `PATCH|DELETE /clientes/:id` — clientes (baja lógica, GENERICO protegido)
@@ -221,5 +222,6 @@ Con la app abierta, **detén la API** (Ctrl-C) y haz una venta: queda guardada y
       Cubre ~14 SPs. La lógica de inventario vive en `src/common/movimientos-inventario.ts`.
 - [x] Módulos adicionales: clientes, conceptos, gastos/ingresos, **cobros** (abono con
       descuento de saldo) y **arqueo de caja** (efectivo esperado del turno).
-- [ ] Fase 4 (resto): reportes avanzados, serialización de comprobantes, SPs restantes
-- [ ] Pendientes menores: proteger endpoints con el JWT (guard), reportes PDF server-side
+- [x] Seguridad: **guard JWT global** (API) + envío de token en web y caja (incl. sync offline)
+- [x] Reportes **PDF server-side** (pdfkit) además de Excel
+- [ ] Fase 4 (resto): serialización de comprobantes, ticket, correo/notificaciones, SPs restantes

@@ -18,6 +18,12 @@ import { getDb } from '../db/local';
 const API_BASE = process.env.POS_API_URL ?? 'http://localhost:3000';
 const MAX_INTENTOS = 10;
 
+// JWT fijado desde el renderer al iniciar sesión (necesario para POST /ventas).
+let authToken: string | null = null;
+export function setAuthToken(token: string | null): void {
+  authToken = token;
+}
+
 export function registrarVentaLocal(venta: RegistrarVentaDTO): {
   idLocal: number;
 } {
@@ -105,7 +111,10 @@ export async function sincronizar(): Promise<{
     try {
       const res = await fetch(`${API_BASE}/ventas`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+        },
         body: p.payload,
       });
 

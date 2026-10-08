@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
-import { API_BASE, reporteVentas, type ReporteVentasResp } from '../api';
+import {
+  descargarReporteExcel,
+  descargarReportePdf,
+  reporteVentas,
+  type ReporteVentasResp,
+} from '../api';
 
 function hoy(): string {
   return new Date().toISOString().slice(0, 10);
@@ -30,7 +35,8 @@ export function ReportesView(): JSX.Element {
         <label>Desde <input type="date" value={desde} onChange={(e) => setDesde(e.target.value)} /></label>
         <label>Hasta <input type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} /></label>
         <button className="btn btn--primary" onClick={cargar}>Consultar</button>
-        <a className="btn" href={`${API_BASE}/reportes/ventas.xlsx?desde=${desde}&hasta=${hasta}`}>Exportar Excel</a>
+        <button className="btn" onClick={() => void descargarReporteExcel(desde, hasta)}>Exportar Excel</button>
+        <button className="btn" onClick={() => void descargarReportePdf(desde, hasta)}>Exportar PDF</button>
       </div>
       {data && (
         <>

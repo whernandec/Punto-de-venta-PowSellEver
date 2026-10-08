@@ -31,4 +31,19 @@ export class ReportesController {
     });
     res.send(buffer);
   }
+
+  /** Mismo reporte exportado como PDF. */
+  @Get('ventas.pdf')
+  async pdf(
+    @Res() res: Response,
+    @Query('desde') desde?: string,
+    @Query('hasta') hasta?: string,
+  ): Promise<void> {
+    const buffer = await this.reportes.ventasPdf(desde ?? hoy(), hasta ?? hoy());
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="ventas_${desde ?? hoy()}_${hasta ?? hoy()}.pdf"`,
+    });
+    res.send(buffer);
+  }
 }

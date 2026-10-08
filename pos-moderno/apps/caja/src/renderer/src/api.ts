@@ -28,6 +28,15 @@ import type {
  */
 export const API_BASE = 'http://localhost:3000';
 
+// JWT de la sesión (se fija tras el login).
+let authToken: string | null = null;
+export function setToken(token: string | null): void {
+  authToken = token;
+}
+function authHeader(): Record<string, string> {
+  return authToken ? { Authorization: `Bearer ${authToken}` } : {};
+}
+
 async function post<T>(ruta: string, body: unknown): Promise<T> {
   return send<T>('POST', ruta, body);
 }
@@ -39,7 +48,10 @@ async function send<T>(
 ): Promise<T> {
   const res = await fetch(`${API_BASE}${ruta}`, {
     method: metodo,
-    headers: body ? { 'Content-Type': 'application/json' } : undefined,
+    headers: {
+      ...authHeader(),
+      ...(body ? { 'Content-Type': 'application/json' } : {}),
+    },
     body: body ? JSON.stringify(body) : undefined,
   });
   if (!res.ok) {
@@ -66,7 +78,9 @@ export function cierreCaja(dto: CierreCajaDTO): Promise<unknown> {
 }
 
 export async function arqueoCaja(idCaja: number): Promise<ArqueoDTO | null> {
-  const res = await fetch(`${API_BASE}/caja/${idCaja}/arqueo`);
+  const res = await fetch(`${API_BASE}/caja/${idCaja}/arqueo`, {
+    headers: { ...authHeader() },
+  });
   if (!res.ok) throw new Error(`Error HTTP ${res.status}`);
   const texto = await res.text();
   return texto ? (JSON.parse(texto) as ArqueoDTO) : null;
@@ -75,7 +89,9 @@ export async function arqueoCaja(idCaja: number): Promise<ArqueoDTO | null> {
 export async function turnoAbierto(
   idCaja: number,
 ): Promise<TurnoAbiertoDTO | null> {
-  const res = await fetch(`${API_BASE}/caja/${idCaja}/turno-abierto`);
+  const res = await fetch(`${API_BASE}/caja/${idCaja}/turno-abierto`, {
+    headers: { ...authHeader() },
+  });
   if (!res.ok) throw new Error(`Error HTTP ${res.status}`);
   const texto = await res.text();
   return texto ? (JSON.parse(texto) as TurnoAbiertoDTO) : null;
@@ -84,7 +100,7 @@ export async function turnoAbierto(
 // ---- Inventario / Kardex ----
 
 async function get<T>(ruta: string): Promise<T> {
-  const res = await fetch(`${API_BASE}${ruta}`);
+  const res = await fetch(`${API_BASE}${ruta}`, { headers: { ...authHeader() } });
   if (!res.ok) throw new Error(`Error HTTP ${res.status}`);
   return res.json() as Promise<T>;
 }
@@ -120,7 +136,9 @@ export function registrarCompra(
 }
 
 export async function obtenerProductos(): Promise<ProductoDTO[]> {
-  const res = await fetch(`${API_BASE}/productos`);
+  const res = await fetch(`${API_BASE}/productos`, {
+    headers: { ...authHeader() },
+  });
   if (!res.ok) throw new Error(`Error al cargar productos (HTTP ${res.status})`);
   // La API devuelve el modelo Prisma; lo adaptamos al DTO compartido.
   const filas = (await res.json()) as Array<Record<string, unknown>>;
@@ -194,3 +212,26 @@ export interface ReporteVentasResp {
 }
 export const reporteVentas = (desde: string, hasta: string) =>
   get<ReporteVentasResp>(`/reportes/ventas?desde=${desde}&hasta=${hasta}`);
+
+async function descargarArchivo(ruta: string, nombre: string): Promise<void> {
+  const res = await fetch(`${API_BASE}${ruta}`, { headers: { ...authHeader() } });
+  if (!res.ok) throw new Error(`Error HTTP ${res.status}`);
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = nombre;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+export const descargarReporteExcel = (desde: string, hasta: string) =>
+  descargarArchivo(
+    `/reportes/ventas.xlsx?desde=${desde}&hasta=${hasta}`,
+    `ventas_${desde}_${hasta}.xlsx`,
+  );
+export const descargarReportePdf = (desde: string, hasta: string) =>
+  descargarArchivo(
+    `/reportes/ventas.pdf?desde=${desde}&hasta=${hasta}`,
+    `ventas_${desde}_${hasta}.pdf`,
+  );

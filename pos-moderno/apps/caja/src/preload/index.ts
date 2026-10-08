@@ -24,6 +24,10 @@ const posAPI = {
     ): Promise<void> =>
       ipcRenderer.invoke('impresora:imprimirTicket', ip, puerto, datos),
   },
+  auth: {
+    setToken: (token: string | null): Promise<void> =>
+      ipcRenderer.invoke('auth:setToken', token),
+  },
   ventas: {
     registrar: (venta: RegistrarVentaDTO): Promise<{ idLocal: number }> =>
       ipcRenderer.invoke('ventas:registrar', venta),

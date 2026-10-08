@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
+import { JwtAuthGuard } from './common/jwt-auth.guard';
 import { PrismaModule } from './prisma/prisma.module';
 import { HealthController } from './health/health.controller';
 import { ProductosModule } from './productos/productos.module';
@@ -36,5 +38,9 @@ import { CobrosModule } from './cobros/cobros.module';
     // Próximos módulos: serialización de comprobantes, ticket, notificaciones/correo.
   ],
   controllers: [HealthController],
+  providers: [
+    // Guard JWT global: protege todos los endpoints salvo los marcados @Public().
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
+  ],
 })
 export class AppModule {}
