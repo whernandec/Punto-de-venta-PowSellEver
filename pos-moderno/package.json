@@ -1,0 +1,24 @@
+{
+  "name": "pos-moderno",
+  "version": "0.1.0",
+  "private": true,
+  "description": "POS PowSellEver — monorepo (migración desde WinForms/.NET 4.8)",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "test": "turbo run test"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "turbo": "^2.1.0",
+    "typescript": "^5.5.4"
+  },
+  "packageManager": "npm@10.0.0"
+}

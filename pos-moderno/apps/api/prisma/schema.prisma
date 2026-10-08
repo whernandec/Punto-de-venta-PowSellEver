@@ -1,0 +1,366 @@
+// Esquema Prisma del POS PowSellEver — 24 tablas mapeadas desde el SQL Server actual.
+//
+// IMPORTANTE: este esquema es un punto de partida escrito a mano a partir de
+// ../../../script.sql. Para alinear 100% con la BD real, ejecuta:
+//     npx prisma db pull        (introspecta y sobreescribe este archivo)
+//     npx prisma generate
+//
+// Convenciones:
+//  - Nombres de modelo/campo en camelCase; @map/@@map preservan los nombres reales.
+//  - numeric(18,2) -> Decimal @db.Decimal(18,2)
+//  - varchar(max)  -> String  @db.VarChar(Max)
+//  - image         -> Bytes   @db.Image  (migrar a almacenamiento de archivos a futuro)
+//  - Columnas COMPUTADAS en SQL Server: solo lectura. Prisma no debe escribirlas;
+//    tras `db pull` quedan anotadas automáticamente. Se omiten aquí para evitar
+//    conflictos de escritura (se exponen vía consultas de lectura cuando se necesiten).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlserver"
+  url      = env("DATABASE_URL")
+}
+
+model Caja {
+  idCaja           Int     @id @default(autoincrement()) @map("Id_Caja")
+  descripcion      String? @map("Descripcion") @db.VarChar(50)
+  tema             String? @map("Tema") @db.VarChar(50)
+  serialPc         String? @map("Serial_PC") @db.VarChar(Max)
+  impresoraTicket  String? @map("Impresora_Ticket") @db.VarChar(Max)
+  impresoraA4      String? @map("Impresora_A4") @db.VarChar(Max)
+  estado           String? @map("Estado") @db.VarChar(50)
+  tipo             String? @map("Tipo") @db.VarChar(50)
+  puertoBalanza    String? @map("PuertoBalanza") @db.VarChar(Max)
+  estadoBalanza    String? @map("EstadoBalanza") @db.VarChar(50)
+
+  @@map("Caja")
+}
+
+model Cliente {
+  idClienteV         Int      @id @default(autoincrement()) @map("idclientev")
+  nombre             String?  @map("Nombre") @db.VarChar(Max)
+  direccion          String?  @map("Direccion") @db.VarChar(Max)
+  identificadorFiscal String? @map("IdentificadorFiscal") @db.VarChar(Max)
+  celular            String?  @map("Celular") @db.VarChar(Max)
+  estado             String?  @map("Estado") @db.VarChar(50)
+  saldo              Decimal? @map("Saldo") @db.Decimal(18, 2)
+
+  @@map("clientes")
+}
+
+model Compra {
+  idCompra     Int       @id @default(autoincrement()) @map("Idcompra")
+  fechaCompra  DateTime? @map("fechacompra") @db.DateTime
+  total        Decimal?  @map("Total") @db.Decimal(18, 2)
+  comprobante  String?   @map("Comprobante") @db.VarChar(Max)
+  idProveedor  Int?      @map("IdProveedor")
+  idCaja       Int?      @map("Idcaja")
+
+  @@map("Compras")
+}
+
+model Concepto {
+  idConcepto  Int     @id @default(autoincrement()) @map("Id_concepto")
+  descripcion String? @map("Descripcion") @db.VarChar(Max)
+
+  @@map("Conceptos")
+}
+
+model ControlCobro {
+  idControlCobro Int       @id @default(autoincrement()) @map("IdcontrolCobro")
+  monto          Decimal?  @map("Monto") @db.Decimal(18, 2)
+  fecha          DateTime? @map("Fecha") @db.DateTime
+  detalle        String?   @map("Detalle") @db.VarChar(Max)
+  idCliente      Int?      @map("IdCliente")
+  idUsuario      Int?      @map("IdUsuario")
+  idCaja         Int?      @map("IdCaja")
+  comprobante    String?   @map("Comprobante") @db.VarChar(Max)
+  efectivo       Decimal?  @map("Efectivo") @db.Decimal(18, 2)
+  tarjeta        Decimal?  @map("Tarjeta") @db.Decimal(18, 2)
+
+  @@map("ControlCobros")
+}
+
+model CorreoBase {
+  idCorreo    Int     @id @default(autoincrement()) @map("IdCorreo")
+  correo      String? @map("Correo") @db.VarChar(Max)
+  password    String? @map("Password") @db.VarChar(Max)
+  estadoEnvio String? @map("EstadoEnvio") @db.VarChar(50)
+
+  @@map("CorreoBase")
+}
+
+model CreditoPorCobrar {
+  idCredito        Int       @id @default(autoincrement()) @map("Id_credito")
+  descripcion      String?   @map("Descripcion") @db.VarChar(Max)
+  fechaRegistro    DateTime? @map("Fecha_registro") @db.DateTime
+  fechaVencimiento DateTime? @map("Fecha_vencimiento") @db.DateTime
+  total            Decimal?  @map("Total") @db.Decimal(18, 2)
+  saldo            Decimal?  @map("Saldo") @db.Decimal(18, 2)
+  estado           String?   @map("Estado") @db.VarChar(Max)
+  idCaja           Int?      @map("Id_caja")
+  idCliente        Int?      @map("Id_cliente")
+
+  @@map("CreditoPorCobrar")
+}
+
+model CreditoPorPagar {
+  idCredito        Int       @id @default(autoincrement()) @map("Id_credito")
+  descripcion      String?   @map("Descripcion") @db.VarChar(Max)
+  fechaRegistro    DateTime? @map("Fecha_registro") @db.DateTime
+  fechaVencimiento DateTime? @map("Fecha_vencimiento") @db.Date
+  total            Decimal?  @map("Total") @db.Decimal(18, 2)
+  saldo            Decimal?  @map("Saldo") @db.Decimal(18, 2)
+  estado           String?   @map("Estado") @db.VarChar(Max)
+  idCaja           Int?      @map("Id_caja")
+  idProveedor      Int?      @map("Id_Proveedor")
+
+  @@map("CreditoPorPagar")
+}
+
+model DetalleVenta {
+  idDetalleVenta  Int      @id @default(autoincrement()) @map("iddetalle_venta")
+  idVenta         Int?     @map("idventa")
+  idProducto      Int?     @map("Id_producto")
+  cantidad        Decimal? @map("cantidad") @db.Decimal(18, 2)
+  precioUnitario  Decimal? @map("preciounitario") @db.Decimal(18, 2)
+  moneda          String?  @map("Moneda") @db.VarChar(50)
+  // Total_a_pagar (computada) y Ganancia (computada) -> solo lectura en SQL Server.
+  unidadDeMedida  String?  @map("Unidad_de_medida") @db.VarChar(50)
+  cantidadMostrada Decimal? @map("Cantidad_mostrada") @db.Decimal(18, 2)
+  estado          String?  @map("Estado") @db.VarChar(50)
+  descripcion     String?  @map("Descripcion") @db.VarChar(50)
+  codigo          String?  @map("Codigo") @db.VarChar(50)
+  stock           String?  @map("Stock") @db.VarChar(50)
+  seVendeA        String?  @map("Se_vende_a") @db.VarChar(50)
+  usaInventarios  String?  @map("Usa_inventarios") @db.VarChar(50)
+  costo           Decimal? @map("Costo") @db.Decimal(18, 2)
+
+  @@map("detalle_venta")
+}
+
+model DetalleCompra {
+  idDetalleCompra Int      @id @default(autoincrement()) @map("IdDetallecompra")
+  idCompra        Int?     @map("IdCompra")
+  cantidad        Decimal? @map("Cantidad") @db.Decimal(18, 2)
+  costo           Decimal? @map("Costo") @db.Decimal(18, 2)
+  moneda          String?  @map("Moneda") @db.VarChar(50)
+  idProducto      Int?     @map("IdProducto")
+  descripcion     String?  @map("Descripcion") @db.VarChar(Max)
+  // Total (computada) -> solo lectura en SQL Server.
+
+  @@map("DetalleCompra")
+}
+
+model Empresa {
+  idEmpresa                    Int       @id @default(autoincrement()) @map("Id_empresa")
+  nombreEmpresa                String?   @map("Nombre_Empresa") @db.VarChar(50)
+  logo                         Bytes?    @map("Logo") @db.Image
+  impuesto                     String?   @map("Impuesto") @db.VarChar(50)
+  porcentajeImpuesto           Decimal?  @map("Porcentaje_impuesto") @db.Decimal(18, 0)
+  moneda                       String?   @map("Moneda") @db.VarChar(50)
+  trabajasConImpuestos         String?   @map("Trabajas_con_impuestos") @db.VarChar(50)
+  modoDeBusqueda               String?   @map("Modo_de_busqueda") @db.VarChar(50)
+  carpetaParaCopias            String?   @map("Carpeta_para_copias_de_seguridad") @db.VarChar(Max)
+  correoParaReportes           String?   @map("Correo_para_envio_de_reportes") @db.VarChar(50)
+  ultimaFechaCopia             String?   @map("Ultima_fecha_de_copia_de_seguridad") @db.VarChar(50)
+  ultimaFechaCopiaDate         DateTime? @map("Ultima_fecha_de_copia_date") @db.DateTime
+  frecuenciaDeCopias           Int?      @map("Frecuencia_de_copias")
+  estado                       String?   @map("Estado") @db.VarChar(50)
+  tipoDeEmpresa                String?   @map("Tipo_de_empresa") @db.VarChar(50)
+  pais                         String?   @map("Pais") @db.VarChar(Max)
+  redondeoDeTotal              String?   @map("Redondeo_de_total") @db.VarChar(50)
+
+  @@map("EMPRESA")
+}
+
+model GastoVario {
+  idGasto         Int       @id @default(autoincrement()) @map("Id_gasto")
+  fecha           DateTime? @map("Fecha") @db.DateTime
+  nroDocumento    String?   @map("Nro_documento") @db.VarChar(Max)
+  tipoComprobante String?   @map("Tipo_comprobante") @db.VarChar(Max)
+  importe         Decimal?  @map("Importe") @db.Decimal(18, 2)
+  descripcion     String?   @map("Descripcion") @db.VarChar(Max)
+  idCaja          Int?      @map("Id_caja")
+  idConcepto      Int?      @map("Id_concepto")
+
+  @@map("Gastos_varios")
+}
+
+model GrupoDeProductos {
+  idLine    Int     @id @default(autoincrement()) @map("Idline")
+  linea     String? @map("Linea") @db.VarChar(50)
+  porDefecto String? @map("Por_defecto") @db.VarChar(50)
+
+  @@map("Grupo_de_Productos")
+}
+
+model IngresoVario {
+  idIngreso       Int       @id @default(autoincrement()) @map("Id_ingreso")
+  fecha           DateTime? @map("Fecha") @db.DateTime
+  nroComprobante  String?   @map("Nro_comprobante") @db.VarChar(Max)
+  tipoComprobante String?   @map("Tipo_comprobante") @db.VarChar(Max)
+  importe         Decimal?  @map("Importe") @db.Decimal(18, 2)
+  descripcion     String?   @map("Descripcion") @db.VarChar(Max)
+  idCaja          Int?      @map("Id_caja")
+
+  @@map("Ingresos_varios")
+}
+
+model InicioSesionPorCaja {
+  idInicioSesion Int     @id @default(autoincrement()) @map("Id_inicio_sesion")
+  idSerialPc     String? @map("Id_serial_Pc") @db.VarChar(Max)
+  idUsuario      Int?    @map("Id_usuario")
+
+  @@map("Inicios_de_sesion_por_caja")
+}
+
+model Kardex {
+  idKardex   Int       @id @default(autoincrement()) @map("Id_kardex")
+  fecha      DateTime? @map("Fecha") @db.DateTime
+  motivo     String?   @map("Motivo") @db.VarChar(Max)
+  cantidad   Decimal?  @map("Cantidad") @db.Decimal(18, 2)
+  idProducto Int?      @map("Id_producto")
+  idUsuario  Int?      @map("Id_usuario")
+  tipo       String?   @map("Tipo") @db.VarChar(50)
+  estado     String?   @map("Estado") @db.VarChar(50)
+  // Total (computada) -> solo lectura en SQL Server.
+  costoUnt   Decimal?  @map("Costo_unt") @db.Decimal(18, 2)
+  habia      Decimal?  @map("Habia") @db.Decimal(18, 2)
+  hay        Decimal?  @map("Hay") @db.Decimal(18, 2)
+  idCaja     Int?      @map("Id_caja")
+
+  @@map("KARDEX")
+}
+
+model Marcan {
+  idMarca Int     @id @default(autoincrement()) @map("Id_marca")
+  s       String? @map("S") @db.VarChar(Max)
+  f       String? @map("F") @db.VarChar(Max)
+  e       String? @map("E") @db.VarChar(Max)
+  fa      String? @map("FA") @db.VarChar(Max)
+
+  @@map("Marcan")
+}
+
+model MovimientoCajaCierre {
+  idCierreCaja     Int       @id @default(autoincrement()) @map("idcierrecaja")
+  fechaInicio      DateTime? @map("fechainicio") @db.DateTime
+  fechaFin         DateTime? @map("fechafin") @db.DateTime
+  fechaCierre      DateTime? @map("fechacierre") @db.DateTime
+  ingresos         Decimal?  @map("ingresos") @db.Decimal(18, 2)
+  egresos          Decimal?  @map("egresos") @db.Decimal(18, 2)
+  saldoQuedaEnCaja Decimal?  @map("Saldo_queda_en_caja") @db.Decimal(18, 2)
+  idUsuario        Int?      @map("Id_usuario")
+  totalCalculado   Decimal?  @map("Total_calculado") @db.Decimal(18, 2)
+  totalReal        Decimal?  @map("Total_real") @db.Decimal(18, 2)
+  estado           String?   @map("Estado") @db.VarChar(50)
+  diferencia       Decimal?  @map("Diferencia") @db.Decimal(18, 2)
+  idCaja           Int?      @map("Id_caja")
+
+  @@map("MOVIMIENTOCAJACIERRE")
+}
+
+model Producto {
+  idProducto      Int      @id @default(autoincrement()) @map("Id_Producto1")
+  descripcion     String?  @map("Descripcion") @db.VarChar(50)
+  imagen          String?  @map("Imagen") @db.VarChar(50)
+  idGrupo         Int?     @map("Id_grupo")
+  usaInventarios  String?  @map("Usa_inventarios") @db.VarChar(50)
+  stock           String?  @map("Stock") @db.VarChar(50)
+  precioDeCompra  Decimal? @map("Precio_de_compra") @db.Decimal(18, 2)
+  fechaVencimiento String? @map("Fecha_de_vencimiento") @db.VarChar(50)
+  precioDeVenta   Decimal? @map("Precio_de_venta") @db.Decimal(18, 2)
+  codigo          String?  @map("Codigo") @db.VarChar(50)
+  seVendeA        String?  @map("Se_vende_a") @db.VarChar(50)
+  impuesto        String?  @map("Impuesto") @db.VarChar(50)
+  stockMinimo     Decimal? @map("Stock_minimo") @db.Decimal(18, 2)
+  precioMayoreo   Decimal? @map("Precio_mayoreo") @db.Decimal(18, 2)
+  // Sub_total_pv y Sub_total_pm (computadas) -> solo lectura en SQL Server.
+  aPartirDe       Decimal? @map("A_partir_de") @db.Decimal(18, 2)
+
+  @@map("Producto1")
+}
+
+model Proveedor {
+  idProveedor         Int      @id @default(autoincrement()) @map("IdProveedor")
+  nombre              String?  @map("Nombre") @db.VarChar(Max)
+  direccion           String?  @map("Direccion") @db.VarChar(Max)
+  identificadorFiscal String?  @map("IdentificadorFiscal") @db.VarChar(Max)
+  celular             String?  @map("Celular") @db.VarChar(Max)
+  estado              String?  @map("Estado") @db.VarChar(50)
+  saldo               Decimal? @map("Saldo") @db.Decimal(18, 2)
+
+  @@map("Proveedores")
+}
+
+model Serializacion {
+  idSerializacion   Int     @id @default(autoincrement()) @map("Id_serializacion")
+  serie             String? @map("Serie") @db.VarChar(50)
+  cantidadDeNumeros String? @map("Cantidad_de_numeros") @db.VarChar(50)
+  numeroFin         String? @map("numerofin") @db.VarChar(50)
+  destino           String? @map("Destino") @db.VarChar(50)
+  tipoDoc           String? @map("tipodoc") @db.VarChar(50)
+  porDefecto        String? @map("Por_defecto") @db.VarChar(50)
+
+  @@map("Serializacion")
+}
+
+model Ticket {
+  idTicket                 Int     @id @default(autoincrement()) @map("Id_ticket")
+  idEmpresa                Int?    @map("Id_Empresa")
+  identificadorFiscal      String? @map("Identificador_fiscal") @db.VarChar(Max)
+  direccion                String? @map("Direccion") @db.VarChar(Max)
+  provinciaDepartamentoPais String? @map("Provincia_Departamento_Pais") @db.VarChar(Max)
+  nombreDeMoneda           String? @map("Nombre_de_Moneda") @db.VarChar(Max)
+  agradecimiento           String? @map("Agradecimiento") @db.VarChar(Max)
+  paginaWebFacebook        String? @map("pagina_Web_Facebook") @db.VarChar(Max)
+  anuncio                  String? @map("Anuncio") @db.VarChar(Max)
+  datosFiscales            String? @map("Datos_fiscales_de_autorizacion") @db.VarChar(Max)
+  porDefecto               String? @map("Por_defecto") @db.VarChar(Max)
+
+  @@map("Ticket")
+}
+
+model Usuario {
+  idUsuario        Int     @id @default(autoincrement()) @map("idUsuario")
+  nombresApellidos String? @map("Nombres_y_Apellidos") @db.VarChar(50)
+  login            String? @map("Login") @db.VarChar(50)
+  // OJO: en el sistema viejo estaba en texto plano. Migrar a hash bcrypt.
+  password         String? @map("Password") @db.VarChar(50)
+  icono            Bytes?  @map("Icono") @db.Image
+  nombreDeIcono    String? @map("Nombre_de_icono") @db.VarChar(Max)
+  correo           String? @map("Correo") @db.VarChar(Max)
+  rol              String? @map("Rol") @db.VarChar(Max)
+  estado           String? @map("Estado") @db.VarChar(50)
+
+  @@map("USUARIO2")
+}
+
+model Venta {
+  idVenta        Int       @id @default(autoincrement()) @map("idventa")
+  idClienteV     Int?      @map("idclientev")
+  fechaVenta     DateTime? @map("fecha_venta") @db.DateTime
+  numeroDeDoc    String?   @map("Numero_de_doc") @db.VarChar(50)
+  montoTotal     Decimal?  @map("Monto_total") @db.Decimal(18, 2)
+  tipoDePago     String?   @map("Tipo_de_pago") @db.VarChar(50)
+  estado         String?   @map("Estado") @db.VarChar(50)
+  igv            Decimal?  @map("IGV") @db.Decimal(18, 1)
+  comprobante    String?   @map("Comprobante") @db.VarChar(50)
+  idUsuario      Int?      @map("Id_usuario")
+  fechaDePago    String?   @map("Fecha_de_pago") @db.VarChar(50)
+  accion         String?   @map("ACCION") @db.VarChar(50)
+  saldo          Decimal?  @map("Saldo") @db.Decimal(18, 2)
+  pagoCon        Decimal?  @map("Pago_con") @db.Decimal(18, 2)
+  porcentajeIgv  Decimal?  @map("Porcentaje_IGV") @db.Decimal(18, 2)
+  idCaja         Int?      @map("Id_caja")
+  referenciaTarjeta String? @map("Referencia_tarjeta") @db.VarChar(50)
+  vuelto         Decimal?  @map("Vuelto") @db.Decimal(18, 2)
+  efectivo       Decimal?  @map("Efectivo") @db.Decimal(18, 2)
+  credito        Decimal?  @map("Credito") @db.Decimal(18, 2)
+  tarjeta        Decimal?  @map("Tarjeta") @db.Decimal(18, 2)
+
+  @@map("ventas")
+}

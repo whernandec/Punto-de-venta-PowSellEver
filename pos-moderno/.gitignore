@@ -1,0 +1,32 @@
+node_modules/
+dist/
+build/
+.next/
+out/
+.turbo/
+coverage/
+*.log
+
+# El .gitignore raíz (plantilla .NET) tiene "**/packages/*" para NuGet, que por
+# accidente ignora nuestro paquete del monorepo. Lo re-incluimos aquí.
+!/packages/
+!/packages/*
+!/packages/**
+/packages/**/node_modules/
+/packages/**/dist/
+
+# Entorno / secretos
+.env
+.env.local
+.env.*.local
+
+# Prisma
+prisma/*.db
+
+# Electron
+apps/caja/release/
+apps/caja/dist-electron/
+
+# OS
+.DS_Store
+Thumbs.db
