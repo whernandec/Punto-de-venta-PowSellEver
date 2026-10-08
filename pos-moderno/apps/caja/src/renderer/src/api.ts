@@ -169,6 +169,29 @@ export const eliminarProducto = (id: number) =>
 export const obtenerGrupos = () =>
   get<Array<{ idLine: number; linea: string }>>('/grupos');
 export const crearGrupo = (linea: string) => post('/grupos', { linea });
+
+export async function importarProductosExcel(
+  file: File,
+): Promise<{ creados: number; omitidos: number; errores: string[] }> {
+  const fd = new FormData();
+  fd.append('archivo', file);
+  const res = await fetch(`${API_BASE}/productos/importar`, {
+    method: 'POST',
+    headers: { ...authHeader() },
+    body: fd,
+  });
+  if (!res.ok) {
+    const d = (await res.json().catch(() => ({}))) as { message?: string };
+    throw new Error(d.message ?? `Error HTTP ${res.status}`);
+  }
+  return res.json() as Promise<{
+    creados: number;
+    omitidos: number;
+    errores: string[];
+  }>;
+}
+export const descargarPlantillaProductos = () =>
+  descargarArchivo('/productos/plantilla.xlsx', 'plantilla_productos.xlsx');
 export const obtenerCompras = () =>
   get<Array<Record<string, unknown>>>('/compras');
 

@@ -123,6 +123,26 @@ export const api = {
   productos: () => get<Array<Record<string, unknown>>>('/productos'),
   grupos: () => get<Array<{ idLine: number; linea: string }>>('/grupos'),
   crearGrupo: (linea: string) => post('/grupos', { linea }),
+  descargarPlantillaProductos: () =>
+    descargarArchivo('/productos/plantilla.xlsx', 'plantilla_productos.xlsx'),
+  importarProductos: async (file: File) => {
+    const fd = new FormData();
+    fd.append('archivo', file);
+    const res = await fetch(`${API_BASE}/productos/importar`, {
+      method: 'POST',
+      headers: { ...authHeader() },
+      body: fd,
+    });
+    if (!res.ok) {
+      const d = (await res.json().catch(() => ({}))) as { message?: string };
+      throw new Error(d.message ?? `Error HTTP ${res.status}`);
+    }
+    return res.json() as Promise<{
+      creados: number;
+      omitidos: number;
+      errores: string[];
+    }>;
+  },
   crearProducto: (dto: Record<string, unknown>) => post('/productos', dto),
   actualizarProducto: (id: number, dto: Record<string, unknown>) =>
     send('PATCH', `/productos/${id}`, dto),

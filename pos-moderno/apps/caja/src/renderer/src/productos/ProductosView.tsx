@@ -1,10 +1,12 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ProductoDTO } from '@pos/types';
 import {
   actualizarProducto,
   crearGrupo,
   crearProducto,
+  descargarPlantillaProductos,
   eliminarProducto,
+  importarProductosExcel,
   obtenerGrupos,
   obtenerProductos,
 } from '../api';
@@ -37,6 +39,24 @@ export function ProductosView(): JSX.Element {
   const [mostrarNuevoGrupo, setMostrarNuevoGrupo] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  async function importar(e: React.ChangeEvent<HTMLInputElement>): Promise<void> {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setError(null);
+    try {
+      const r = await importarProductosExcel(file);
+      setMsg(
+        `Importación: ${r.creados} creados, ${r.omitidos} omitidos` +
+          (r.errores.length ? `, ${r.errores.length} con error` : ''),
+      );
+      cargar();
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  }
 
   function cargar(): void {
     obtenerProductos().then(setProductos).catch((e: Error) => setError(e.message));
@@ -175,8 +195,18 @@ export function ProductosView(): JSX.Element {
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
           />
-          <button className="prodlist__excel" type="button" disabled title="Próximamente">
+          <input
+            ref={fileRef}
+            type="file"
+            accept=".xlsx"
+            style={{ display: 'none' }}
+            onChange={importar}
+          />
+          <button className="prodlist__excel" type="button" onClick={() => fileRef.current?.click()}>
             ▦ Importar desde EXCEL
+          </button>
+          <button className="prodlist__excel" type="button" onClick={() => void descargarPlantillaProductos()} style={{ color: '#64748b' }}>
+            ⬇ Plantilla
           </button>
           <button className="prodlist__add" type="button" onClick={abrirNuevo} title="Agregar producto">
             +

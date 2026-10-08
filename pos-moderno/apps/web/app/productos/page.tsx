@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '@/lib/api';
 
 interface Prod {
@@ -65,6 +65,21 @@ export default function ProductosPage(): JSX.Element {
   const [verNuevoGrupo, setVerNuevoGrupo] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  async function importar(e: React.ChangeEvent<HTMLInputElement>): Promise<void> {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setError(null);
+    try {
+      const r = await api.importarProductos(file);
+      setMsg(`Importación: ${r.creados} creados, ${r.omitidos} omitidos` + (r.errores.length ? `, ${r.errores.length} con error` : ''));
+      cargar();
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  }
 
   function cargar(): void {
     api.productos().then((r) => setProductos(r.map(mapProd))).catch((e: Error) => setError(e.message));
@@ -186,7 +201,9 @@ export default function ProductosPage(): JSX.Element {
         <h2>Productos</h2>
         <div className="toolbar">
           <input placeholder="Buscar…" value={busqueda} onChange={(e) => setBusqueda(e.target.value)} />
-          <button className="btn btn--ghost" disabled title="Próximamente">▦ Importar desde EXCEL</button>
+          <input ref={fileRef} type="file" accept=".xlsx" style={{ display: 'none' }} onChange={importar} />
+          <button className="btn btn--ghost" onClick={() => fileRef.current?.click()}>▦ Importar desde EXCEL</button>
+          <button className="btn btn--ghost" onClick={() => api.descargarPlantillaProductos()}>⬇ Plantilla</button>
           <button className="btn" style={{ marginLeft: 'auto', borderRadius: 999 }} onClick={abrirNuevo}>+ Agregar</button>
         </div>
         {error && <p className="alert alert--error">{error}</p>}
