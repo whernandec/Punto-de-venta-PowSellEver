@@ -321,3 +321,190 @@ a.btn {
   text-decoration: none;
   display: inline-block;
 }
+
+/* ===== Pantalla POS (Ventas) ===== */
+.pos {
+  background: #111418;
+  color: #e5e7eb;
+  min-height: calc(100vh - 150px);
+  padding: 10px 14px;
+}
+.pos__search {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.pos__input {
+  flex: 1;
+  padding: 12px 14px;
+  font-size: 16px;
+  border: 2px solid #374151;
+  border-radius: 6px;
+  background: #fff;
+  color: #111;
+}
+.pos__toggle {
+  display: flex;
+  border: 1px solid #4b5563;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.pos__toggle button {
+  background: #1f2937;
+  color: #cbd5e1;
+  border: none;
+  padding: 12px 18px;
+  font-size: 15px;
+  cursor: pointer;
+}
+.pos__toggle button.on {
+  background: #bbf7d0;
+  color: #065f46;
+  font-weight: 700;
+}
+.pos__sugerencias {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  background: #fff;
+  color: #111;
+  border-radius: 6px;
+  max-width: 60%;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  position: relative;
+  z-index: 5;
+}
+.pos__sugerencias li {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+}
+.pos__sugerencias li:hover {
+  background: #eff6ff;
+}
+.muted {
+  color: #94a3b8;
+  font-size: 13px;
+}
+.pos__sugerencias .muted {
+  color: #64748b;
+}
+.pos__body {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 14px;
+  margin-top: 12px;
+}
+.pos__cart table {
+  width: 100%;
+  border-collapse: collapse;
+  background: transparent;
+  color: #e5e7eb;
+  box-shadow: none;
+}
+.pos__cart th {
+  text-align: left;
+  color: #9ca3af;
+  border-bottom: 1px solid #374151;
+  padding: 8px;
+  font-size: 13px;
+}
+.pos__cart td {
+  padding: 8px;
+  border-bottom: 1px solid #1f2937;
+}
+.pos__cart th.num,
+.pos__cart td.num {
+  text-align: right;
+}
+.pos__cart tr.sel {
+  background: #1e293b;
+}
+.pos__cart button {
+  background: #374151;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+.pos__cart button.x {
+  background: #dc2626;
+  border-radius: 999px;
+}
+.pos__panel {
+  background: #1b1f24;
+  border-radius: 8px;
+  padding: 14px;
+}
+.pos__totalbox {
+  background: #2b3038;
+  color: #fff;
+  font-size: 34px;
+  font-weight: 800;
+  padding: 12px 16px;
+  border-radius: 6px;
+}
+.pos__display {
+  width: 100%;
+  height: 40px;
+  margin: 12px 0;
+  background: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 20px;
+  text-align: right;
+  padding: 0 10px;
+}
+.keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr) 1.5fr;
+  gap: 8px;
+}
+.keypad button {
+  background: #2b3038;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 16px 0;
+  font-size: 20px;
+  cursor: pointer;
+}
+.keypad button:hover {
+  background: #3a414b;
+}
+.keypad .k-act {
+  font-size: 15px;
+  font-weight: 700;
+  background: #323842;
+}
+.pos__totales {
+  margin: 12px 0;
+  font-size: 14px;
+}
+.pos__totales div {
+  display: flex;
+  justify-content: space-between;
+  padding: 2px 0;
+  color: #cbd5e1;
+}
+.pos__cobrar {
+  width: 100%;
+  background: #2b3038;
+  color: #fff;
+  border: 2px solid #4b5563;
+  border-radius: 6px;
+  padding: 16px;
+  font-size: 22px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.pos__cobrar:hover {
+  background: #16a34a;
+}
+.pos__cobrar:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

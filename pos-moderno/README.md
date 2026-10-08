@@ -18,7 +18,10 @@ apps/
   api/     NestJS + Prisma        → lógica de negocio sobre SQL Server
   caja/    Electron + React       → TODOS los módulos (ventas offline, inventario, compras,
                                      productos, proveedores, clientes, cobros, movimientos,
-                                     usuarios, reportes, empresa) + balanza/impresora
+                                     usuarios, reportes, empresa, comprobantes, ticket, correo)
+                                     + balanza/impresora. Pantalla de venta estilo POS con
+                                     búsqueda por LECTORA de código de barras y por TECLADO,
+                                     teclado numérico (cantidad/precio/descuento) y COBRAR.
   web/     Next.js + React        → back-office: dashboard, productos, inventario, compras,
                                      proveedores, clientes, movimientos, usuarios, reportes, empresa
 packages/
