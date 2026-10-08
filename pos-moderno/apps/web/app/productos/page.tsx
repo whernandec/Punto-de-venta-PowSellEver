@@ -7,6 +7,7 @@ interface Prod {
   idProducto: number;
   descripcion: string;
   codigo: string;
+  impuesto: string;
   precioCompra: number;
   precioVenta: number;
   precioMayoreo: number;
@@ -14,6 +15,7 @@ interface Prod {
   usaInventarios: string;
   stock: string;
   stockMinimo: number;
+  fechaVencimiento: string;
   idGrupo: number | null;
 }
 
@@ -22,6 +24,7 @@ function mapProd(f: Record<string, unknown>): Prod {
     idProducto: Number(f.idProducto),
     descripcion: String(f.descripcion ?? ''),
     codigo: String(f.codigo ?? ''),
+    impuesto: String(f.impuesto ?? '0'),
     precioCompra: f.precioDeCompra != null ? Number(f.precioDeCompra) : 0,
     precioVenta: f.precioDeVenta != null ? Number(f.precioDeVenta) : 0,
     precioMayoreo: f.precioMayoreo != null ? Number(f.precioMayoreo) : 0,
@@ -29,6 +32,7 @@ function mapProd(f: Record<string, unknown>): Prod {
     usaInventarios: String(f.usaInventarios ?? 'NO'),
     stock: String(f.stock ?? '0'),
     stockMinimo: f.stockMinimo != null ? Number(f.stockMinimo) : 0,
+    fechaVencimiento: String(f.fechaVencimiento ?? ''),
     idGrupo: f.idGrupo != null ? Number(f.idGrupo) : null,
   };
 }
@@ -54,6 +58,7 @@ const VACIO = {
 export default function ProductosPage(): JSX.Element {
   const [productos, setProductos] = useState<Prod[]>([]);
   const [grupos, setGrupos] = useState<Array<{ idLine: number; linea: string }>>([]);
+  const [vista, setVista] = useState<'lista' | 'form'>('lista');
   const [f, setF] = useState({ ...VACIO });
   const [busqueda, setBusqueda] = useState('');
   const [nuevoGrupo, setNuevoGrupo] = useState('');
@@ -66,6 +71,9 @@ export default function ProductosPage(): JSX.Element {
     api.grupos().then(setGrupos).catch(() => undefined);
   }
   useEffect(cargar, []);
+
+  const grupoNombre = (id: number | null): string =>
+    grupos.find((g) => g.idLine === id)?.linea ?? '';
 
   function setCosto(v: string): void {
     const costo = Number(v) || 0;
@@ -85,12 +93,13 @@ export default function ProductosPage(): JSX.Element {
   function generarCodigo(): void {
     setF((p) => ({ ...p, codigo: String(Math.floor(10000000 + Math.random() * 89999999)) }));
   }
-  function nuevo(): void {
+  function abrirNuevo(): void {
     setF({ ...VACIO });
     setMsg(null);
     setError(null);
+    setVista('form');
   }
-  function editar(p: Prod): void {
+  function abrirEditar(p: Prod): void {
     const costo = p.precioCompra;
     setF({
       id: p.idProducto,
@@ -106,9 +115,10 @@ export default function ProductosPage(): JSX.Element {
       controlar: p.usaInventarios === 'SI',
       stock: p.stock,
       stockMinimo: String(p.stockMinimo),
-      fechaVencimiento: '',
+      fechaVencimiento: p.fechaVencimiento,
       noAplicaVenc: false,
     });
+    setVista('form');
   }
 
   async function agregarGrupo(): Promise<void> {
@@ -145,8 +155,8 @@ export default function ProductosPage(): JSX.Element {
       if (f.id) await api.actualizarProducto(f.id, dto);
       else await api.crearProducto(dto);
       setMsg(`Producto "${f.descripcion}" guardado.`);
-      nuevo();
       cargar();
+      setVista('lista');
     } catch (err) {
       setError((err as Error).message);
     }
@@ -169,16 +179,63 @@ export default function ProductosPage(): JSX.Element {
 
   const costoInventario = productos.reduce((a, p) => a + p.precioCompra * (Number(p.stock) || 0), 0);
 
+  // ---------- LISTA ----------
+  if (vista === 'lista') {
+    return (
+      <div>
+        <h2>Productos</h2>
+        <div className="toolbar">
+          <input placeholder="Buscar…" value={busqueda} onChange={(e) => setBusqueda(e.target.value)} />
+          <button className="btn btn--ghost" disabled title="Próximamente">▦ Importar desde EXCEL</button>
+          <button className="btn" style={{ marginLeft: 'auto', borderRadius: 999 }} onClick={abrirNuevo}>+ Agregar</button>
+        </div>
+        {error && <p className="alert alert--error">{error}</p>}
+        {msg && <p className="alert alert--ok">{msg}</p>}
+        <table>
+          <thead>
+            <tr>
+              <th />
+              <th>Código</th><th>Grupo</th><th>Descripción</th>
+              <th className="num">Impuesto</th><th className="num">P_Compra</th><th className="num">P_mayoreo</th>
+              <th className="num">Stock_mín</th><th>F_vencimiento</th><th className="num">Stock</th><th className="num">P_venta</th>
+            </tr>
+          </thead>
+          <tbody>
+            {lista.map((p) => (
+              <tr key={p.idProducto}>
+                <td style={{ whiteSpace: 'nowrap' }}>
+                  <button className="btn btn--ghost" onClick={() => borrar(p.idProducto)}>✕</button>{' '}
+                  <button className="btn btn--ghost" onClick={() => abrirEditar(p)}>✎</button>
+                </td>
+                <td>{p.codigo}</td>
+                <td>{grupoNombre(p.idGrupo)}</td>
+                <td>{p.descripcion}</td>
+                <td className="num">{p.impuesto}</td>
+                <td className="num">{p.precioCompra.toFixed(2)}</td>
+                <td className="num">{p.precioMayoreo.toFixed(2)}</td>
+                <td className="num">{p.stockMinimo.toFixed(2)}</td>
+                <td>{p.fechaVencimiento}</td>
+                <td className="num">{p.usaInventarios === 'SI' ? p.stock : '—'}</td>
+                <td className="num">{p.precioVenta.toFixed(2)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <div className="cards" style={{ marginTop: 16 }}>
+          <div className="card"><div className="card__value">{productos.length}</div><div className="card__label">Cant. de productos</div></div>
+          <div className="card"><div className="card__value">{costoInventario.toFixed(2)}</div><div className="card__label">Costo de inventario</div></div>
+        </div>
+      </div>
+    );
+  }
+
+  // ---------- FORM ----------
   return (
     <div>
-      <h2>Productos</h2>
       <div className="toolbar">
-        <input placeholder="Buscar…" value={busqueda} onChange={(e) => setBusqueda(e.target.value)} />
-        <button className="btn" onClick={nuevo}>+ Nuevo</button>
+        <button className="btn btn--ghost" onClick={() => setVista('lista')}>← Volver al listado</button>
       </div>
       {error && <p className="alert alert--error">{error}</p>}
-      {msg && <p className="alert alert--ok">{msg}</p>}
-
       <form className="panel" onSubmit={guardar} style={{ maxWidth: 680 }}>
         <div className="row"><label style={{ width: 130 }}>Descripción</label><input style={{ flex: 1 }} value={f.descripcion} onChange={(e) => setF((p) => ({ ...p, descripcion: e.target.value }))} required /></div>
         <div className="row" style={{ marginTop: 8 }}>
@@ -215,7 +272,6 @@ export default function ProductosPage(): JSX.Element {
           <input value={f.codigo} onChange={(e) => setF((p) => ({ ...p, codigo: e.target.value }))} />
           <button type="button" className="btn btn--ghost" onClick={generarCodigo}>Generar código</button>
         </div>
-
         <div className="panel" style={{ background: '#f1f5f9', marginTop: 12 }}>
           <label style={{ fontWeight: 600 }}>
             <input type="checkbox" checked={f.controlar} onChange={(e) => setF((p) => ({ ...p, controlar: e.target.checked }))} /> Controlar inventarios
@@ -232,31 +288,8 @@ export default function ProductosPage(): JSX.Element {
             </>
           )}
         </div>
-
         <button className="btn" type="submit" style={{ marginTop: 12 }}>{f.id ? 'Actualizar' : 'Guardar'}</button>
       </form>
-
-      <div className="cards" style={{ marginTop: 16 }}>
-        <div className="card"><div className="card__value">{productos.length}</div><div className="card__label">Cant. de productos</div></div>
-        <div className="card"><div className="card__value">{costoInventario.toFixed(2)}</div><div className="card__label">Costo de inventario</div></div>
-      </div>
-
-      <table>
-        <thead><tr><th>Código</th><th>Descripción</th><th className="num">Costo</th><th className="num">Venta</th><th className="num">Stock</th><th /></tr></thead>
-        <tbody>
-          {lista.map((p) => (
-            <tr key={p.idProducto}>
-              <td>{p.codigo}</td><td>{p.descripcion}</td>
-              <td className="num">{p.precioCompra}</td><td className="num">{p.precioVenta}</td>
-              <td className="num">{p.usaInventarios === 'SI' ? p.stock : '—'}</td>
-              <td>
-                <button className="btn btn--ghost" onClick={() => editar(p)}>Editar</button>{' '}
-                <button className="btn btn--ghost" onClick={() => borrar(p.idProducto)}>Eliminar</button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
     </div>
   );
 }

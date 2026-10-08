@@ -154,6 +154,7 @@ export async function obtenerProductos(): Promise<ProductoDTO[]> {
     precioMayoreo: f.precioMayoreo != null ? Number(f.precioMayoreo) : null,
     impuesto: (f.impuesto as string) ?? null,
     stockMinimo: f.stockMinimo != null ? Number(f.stockMinimo) : null,
+    fechaVencimiento: (f.fechaVencimiento as string) ?? null,
     subTotalPv: null,
     subTotalPm: null,
   }));

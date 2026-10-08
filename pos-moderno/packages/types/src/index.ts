@@ -42,6 +42,7 @@ export interface ProductoDTO {
   precioMayoreo: number | null;
   impuesto: string | null;
   stockMinimo: number | null;
+  fechaVencimiento: string | null;
   /** Columna computada en SQL Server (solo lectura). */
   subTotalPv: number | null;
   /** Columna computada en SQL Server (solo lectura). */

@@ -30,6 +30,7 @@ const VACIO = {
 export function ProductosView(): JSX.Element {
   const [productos, setProductos] = useState<ProductoDTO[]>([]);
   const [grupos, setGrupos] = useState<Array<{ idLine: number; linea: string }>>([]);
+  const [vista, setVista] = useState<'lista' | 'form'>('lista');
   const [f, setF] = useState({ ...VACIO });
   const [busqueda, setBusqueda] = useState('');
   const [nuevoGrupo, setNuevoGrupo] = useState('');
@@ -43,7 +44,10 @@ export function ProductosView(): JSX.Element {
   }
   useEffect(cargar, []);
 
-  // ---- Vinculación costo / % ganancia / precio de venta ----
+  const grupoNombre = (id: number | null): string =>
+    grupos.find((g) => g.idLine === id)?.linea ?? '';
+
+  // costo / % ganancia / precio de venta vinculados
   function setCosto(v: string): void {
     const costo = Number(v) || 0;
     const gan = Number(f.ganancia) || 0;
@@ -57,22 +61,20 @@ export function ProductosView(): JSX.Element {
   function setPrecioVenta(v: string): void {
     const costo = Number(f.costo) || 0;
     const pv = Number(v) || 0;
-    const gan = costo > 0 ? ((pv / costo - 1) * 100).toFixed(2) : '0';
-    setF((p) => ({ ...p, precioVenta: v, ganancia: gan }));
+    setF((p) => ({ ...p, precioVenta: v, ganancia: costo > 0 ? ((pv / costo - 1) * 100).toFixed(2) : '0' }));
   }
-
   function generarCodigo(): void {
-    const c = String(Math.floor(10000000 + Math.random() * 89999999));
-    setF((p) => ({ ...p, codigo: c }));
+    setF((p) => ({ ...p, codigo: String(Math.floor(10000000 + Math.random() * 89999999)) }));
   }
 
-  function nuevo(): void {
+  function abrirNuevo(): void {
     setF({ ...VACIO });
     setMsg(null);
     setError(null);
+    setVista('form');
   }
 
-  function editar(p: ProductoDTO): void {
+  function abrirEditar(p: ProductoDTO): void {
     const costo = p.precioCompra ?? 0;
     const pv = p.precioVenta ?? 0;
     setF({
@@ -80,7 +82,7 @@ export function ProductosView(): JSX.Element {
       descripcion: p.descripcion ?? '',
       seVendeA: p.seVendeA ?? 'UNIDAD',
       costo: String(costo),
-      ganancia: costo > 0 ? (((pv / costo) - 1) * 100).toFixed(2) : '0',
+      ganancia: costo > 0 ? ((pv / costo - 1) * 100).toFixed(2) : '0',
       precioVenta: String(pv),
       precioMayoreo: String(p.precioMayoreo ?? 0),
       aPartirDe: '0',
@@ -89,11 +91,12 @@ export function ProductosView(): JSX.Element {
       controlar: (p.usaInventarios ?? 'NO') === 'SI',
       stock: p.stock ?? '0',
       stockMinimo: String(p.stockMinimo ?? 0),
-      fechaVencimiento: '',
+      fechaVencimiento: p.fechaVencimiento ?? '',
       noAplicaVenc: false,
     });
     setMsg(null);
     setError(null);
+    setVista('form');
   }
 
   async function agregarGrupo(): Promise<void> {
@@ -124,15 +127,14 @@ export function ProductosView(): JSX.Element {
       stock: f.controlar ? f.stock : '0',
       stockMinimo: f.controlar ? Number(f.stockMinimo) || 0 : 0,
       impuesto: '0',
-      fechaVencimiento:
-        f.controlar && !f.noAplicaVenc ? f.fechaVencimiento : undefined,
+      fechaVencimiento: f.controlar && !f.noAplicaVenc ? f.fechaVencimiento : undefined,
     };
     try {
       if (f.id) await actualizarProducto(f.id, dto);
       else await crearProducto(dto);
       setMsg(`Producto "${f.descripcion}" guardado.`);
-      nuevo();
       cargar();
+      setVista('lista');
     } catch (err) {
       setError((err as Error).message);
     }
@@ -162,20 +164,81 @@ export function ProductosView(): JSX.Element {
     0,
   );
 
+  // ---------- Vista LISTA ----------
+  if (vista === 'lista') {
+    return (
+      <main className="page prodlist">
+        <div className="prodlist__bar">
+          <input
+            className="prodlist__search"
+            placeholder="Buscar…"
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+          />
+          <button className="prodlist__excel" type="button" disabled title="Próximamente">
+            ▦ Importar desde EXCEL
+          </button>
+          <button className="prodlist__add" type="button" onClick={abrirNuevo} title="Agregar producto">
+            +
+          </button>
+        </div>
+
+        {error && <p className="alert alert--error">{error}</p>}
+        {msg && <p className="alert alert--ok">{msg}</p>}
+
+        <table className="tabla">
+          <thead>
+            <tr>
+              <th></th>
+              <th>Codigo</th>
+              <th>Grupo</th>
+              <th>Descripcion</th>
+              <th className="num">Impuesto</th>
+              <th className="num">P_Compra</th>
+              <th className="num">P_mayoreo</th>
+              <th className="num">Stock_minimo</th>
+              <th>F_vencimiento</th>
+              <th className="num">Stock</th>
+              <th className="num">P_venta</th>
+            </tr>
+          </thead>
+          <tbody>
+            {lista.map((p) => (
+              <tr key={p.id}>
+                <td className="acc">
+                  <button className="ico ico--del" title="Eliminar" onClick={() => borrar(p.id)}>✕</button>
+                  <button className="ico ico--edit" title="Editar" onClick={() => abrirEditar(p)}>✎</button>
+                </td>
+                <td>{p.codigo}</td>
+                <td>{grupoNombre(p.idGrupo)}</td>
+                <td>{p.descripcion}</td>
+                <td className="num">{p.impuesto ?? '0'}</td>
+                <td className="num">{(p.precioCompra ?? 0).toFixed(2)}</td>
+                <td className="num">{(p.precioMayoreo ?? 0).toFixed(2)}</td>
+                <td className="num">{(p.stockMinimo ?? 0).toFixed(2)}</td>
+                <td>{p.fechaVencimiento ?? ''}</td>
+                <td className="num">{p.usaInventarios === 'SI' ? p.stock : '—'}</td>
+                <td className="num">{(p.precioVenta ?? 0).toFixed(2)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        <div className="prod__footer">
+          <span>Cant. de Productos: <strong>{productos.length}</strong></span>
+          <span>Costo de Inventario: <strong>{costoInventario.toFixed(2)}</strong></span>
+        </div>
+      </main>
+    );
+  }
+
+  // ---------- Vista FORMULARIO ----------
   return (
     <main className="page prod">
       <div className="prod__bar">
-        <input
-          className="prod__search"
-          placeholder="Buscar…"
-          value={busqueda}
-          onChange={(e) => setBusqueda(e.target.value)}
-        />
-        <button className="btn" type="button" onClick={nuevo}>+ Nuevo</button>
+        <button className="btn" type="button" onClick={() => setVista('lista')}>← Volver al listado</button>
       </div>
-
       {error && <p className="alert alert--error">{error}</p>}
-      {msg && <p className="alert alert--ok">{msg}</p>}
 
       <form className="prod__form panel" onSubmit={guardar}>
         <div className="fila">
@@ -245,28 +308,6 @@ export function ProductosView(): JSX.Element {
           {f.id ? 'Actualizar' : 'Guardar'}
         </button>
       </form>
-
-      <div className="prod__footer">
-        <span>Cant. de Productos: <strong>{productos.length}</strong></span>
-        <span>Costo de Inventario: <strong>{costoInventario.toFixed(2)}</strong></span>
-      </div>
-
-      <table className="tabla">
-        <thead><tr><th>Código</th><th>Descripción</th><th className="num">Costo</th><th className="num">Venta</th><th className="num">Stock</th><th></th></tr></thead>
-        <tbody>
-          {lista.map((p) => (
-            <tr key={p.id}>
-              <td>{p.codigo}</td><td>{p.descripcion}</td>
-              <td className="num">{p.precioCompra}</td><td className="num">{p.precioVenta}</td>
-              <td className="num">{p.usaInventarios === 'SI' ? p.stock : '—'}</td>
-              <td>
-                <button onClick={() => editar(p)}>Editar</button>{' '}
-                <button onClick={() => borrar(p.id)}>Eliminar</button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
     </main>
   );
 }
