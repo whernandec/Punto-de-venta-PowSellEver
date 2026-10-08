@@ -359,6 +359,59 @@ export interface ArqueoDTO {
   saldoEsperado: number;
 }
 
+// ---- DTOs: Serialización de comprobantes ----
+
+export interface SerializacionDTO {
+  idSerializacion: number;
+  serie: string | null;
+  tipoDoc: string | null;
+  destino: string | null;
+  cantidadDeNumeros: string | null;
+  numeroFin: string | null;
+  porDefecto: string | null;
+}
+
+export interface CrearSerieDTO {
+  serie: string;
+  tipoDoc?: string;
+  destino?: string;
+  cantidadDeNumeros?: string;
+  numeroFin?: string;
+  porDefecto?: string;
+}
+
+// ---- DTOs: Ticket (plantilla de comprobante impreso) ----
+
+export interface TicketDTO {
+  idTicket: number;
+  idEmpresa: number | null;
+  identificadorFiscal: string | null;
+  direccion: string | null;
+  provinciaDepartamentoPais: string | null;
+  nombreDeMoneda: string | null;
+  agradecimiento: string | null;
+  paginaWebFacebook: string | null;
+  anuncio: string | null;
+  datosFiscales: string | null;
+  porDefecto: string | null;
+}
+
+export type ActualizarTicketDTO = Partial<Omit<TicketDTO, 'idTicket'>>;
+
+// ---- DTOs: Correo ----
+
+export interface CorreoConfigDTO {
+  idCorreo: number;
+  correo: string | null;
+  estadoEnvio: string | null;
+}
+
+export interface EnviarReporteDTO {
+  para: string;
+  desde: string;
+  hasta: string;
+}
+
 // ---- Respuesta estándar de la API ----
 
 export interface ApiError {

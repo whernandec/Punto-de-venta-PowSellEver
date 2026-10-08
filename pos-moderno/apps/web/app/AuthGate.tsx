@@ -91,6 +91,9 @@ export function AuthGate({
           <Link href="/movimientos">Movimientos</Link>
           <Link href="/usuarios">Usuarios</Link>
           <Link href="/reportes">Reportes</Link>
+          <Link href="/comprobantes">Comprobantes</Link>
+          <Link href="/ticket">Ticket</Link>
+          <Link href="/correo">Correo</Link>
           <Link href="/empresa">Empresa</Link>
         </nav>
         <div className="sidebar__user">

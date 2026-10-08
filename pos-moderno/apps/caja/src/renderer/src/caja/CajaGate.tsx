@@ -12,6 +12,9 @@ import { MovimientosView } from '../finanzas/MovimientosView';
 import { UsuariosView } from '../usuarios/UsuariosView';
 import { ReportesView } from '../reportes/ReportesView';
 import { EmpresaView } from '../empresa/EmpresaView';
+import { ComprobantesView } from '../comprobantes/ComprobantesView';
+import { TicketView } from '../ticket/TicketView';
+import { CorreoView } from '../correo/CorreoView';
 
 type Tab =
   | 'ventas'
@@ -24,6 +27,9 @@ type Tab =
   | 'movimientos'
   | 'usuarios'
   | 'reportes'
+  | 'comprobantes'
+  | 'ticket'
+  | 'correo'
   | 'empresa';
 
 const TABS: Array<{ key: Tab; label: string }> = [
@@ -37,6 +43,9 @@ const TABS: Array<{ key: Tab; label: string }> = [
   { key: 'movimientos', label: 'Movimientos' },
   { key: 'usuarios', label: 'Usuarios' },
   { key: 'reportes', label: 'Reportes' },
+  { key: 'comprobantes', label: 'Comprobantes' },
+  { key: 'ticket', label: 'Ticket' },
+  { key: 'correo', label: 'Correo' },
   { key: 'empresa', label: 'Empresa' },
 ];
 
@@ -170,6 +179,9 @@ export function CajaGate({ idCaja, usuario }: Props): JSX.Element {
       {tab === 'movimientos' && <MovimientosView idCaja={idCaja} />}
       {tab === 'usuarios' && <UsuariosView />}
       {tab === 'reportes' && <ReportesView />}
+      {tab === 'comprobantes' && <ComprobantesView />}
+      {tab === 'ticket' && <TicketView />}
+      {tab === 'correo' && <CorreoView />}
       {tab === 'empresa' && <EmpresaView />}
     </>
   );

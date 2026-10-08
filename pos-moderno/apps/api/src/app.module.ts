@@ -17,6 +17,9 @@ import { EmpresaModule } from './empresa/empresa.module';
 import { ClientesModule } from './clientes/clientes.module';
 import { FinanzasModule } from './finanzas/finanzas.module';
 import { CobrosModule } from './cobros/cobros.module';
+import { SerializacionModule } from './serializacion/serializacion.module';
+import { TicketModule } from './ticket/ticket.module';
+import { CorreoModule } from './correo/correo.module';
 
 @Module({
   imports: [
@@ -35,7 +38,9 @@ import { CobrosModule } from './cobros/cobros.module';
     ClientesModule,
     FinanzasModule,
     CobrosModule,
-    // Próximos módulos: serialización de comprobantes, ticket, notificaciones/correo.
+    SerializacionModule,
+    TicketModule,
+    CorreoModule,
   ],
   controllers: [HealthController],
   providers: [

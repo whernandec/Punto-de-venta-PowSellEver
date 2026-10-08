@@ -147,4 +147,16 @@ export const api = {
   crearIngreso: (dto: CrearIngresoDTO) => post('/ingresos', dto),
   cobros: () => get<Array<Record<string, unknown>>>('/cobros'),
   crearCobro: (dto: CrearCobroDTO) => post('/cobros', dto),
+  // Serialización de comprobantes
+  series: () => get<Array<Record<string, unknown>>>('/serializacion'),
+  crearSerie: (dto: Record<string, unknown>) => post('/serializacion', dto),
+  eliminarSerie: (id: number) => send('DELETE', `/serializacion/${id}`),
+  // Ticket
+  ticket: () => get<Record<string, unknown> | null>('/ticket'),
+  guardarTicket: (dto: Record<string, unknown>) => send('PUT', '/ticket', dto),
+  // Correo
+  correo: () => get<Record<string, unknown> | null>('/correo'),
+  guardarCorreo: (dto: Record<string, unknown>) => send('PUT', '/correo', dto),
+  enviarReporteCorreo: (para: string, desde: string, hasta: string) =>
+    post('/correo/enviar-reporte', { para, desde, hasta }),
 };

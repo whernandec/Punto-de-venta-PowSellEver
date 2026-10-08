@@ -197,6 +197,29 @@ export const obtenerEmpresa = () => get<EmpresaDTO | null>('/empresa');
 export const actualizarEmpresa = (id: number, dto: Partial<EmpresaDTO>) =>
   send<EmpresaDTO>('PUT', `/empresa/${id}`, dto);
 
+// ---- Serialización / Ticket / Correo ----
+export const obtenerSeries = () =>
+  get<Array<Record<string, unknown>>>('/serializacion');
+export const crearSerie = (dto: Record<string, unknown>) =>
+  post('/serializacion', dto);
+export const eliminarSerie = (id: number) =>
+  send('DELETE', `/serializacion/${id}`);
+
+export const obtenerTicket = () =>
+  get<Record<string, unknown> | null>('/ticket');
+export const guardarTicket = (dto: Record<string, unknown>) =>
+  send('PUT', '/ticket', dto);
+
+export const obtenerCorreo = () =>
+  get<Record<string, unknown> | null>('/correo');
+export const guardarCorreo = (dto: Record<string, unknown>) =>
+  send('PUT', '/correo', dto);
+export const enviarReporteCorreo = (
+  para: string,
+  desde: string,
+  hasta: string,
+) => post('/correo/enviar-reporte', { para, desde, hasta });
+
 // ---- Reportes ----
 export interface ReporteVentasResp {
   desde: string;

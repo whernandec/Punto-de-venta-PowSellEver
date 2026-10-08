@@ -60,6 +60,9 @@ Endpoints:
 - `GET|POST /conceptos` · `GET|POST /gastos` · `GET|POST /ingresos` — movimientos de caja
 - `GET|POST /cobros` — abonos de clientes a crédito (descuenta saldo, transaccional)
 - `GET /caja/:idCaja/arqueo` — efectivo esperado del turno (inicial + ventas + ingresos − gastos)
+- `GET|POST|PATCH|DELETE /serializacion` — series de comprobantes
+- `GET|PUT /ticket` — plantilla del comprobante impreso
+- `GET|PUT /correo` + `POST /correo/enviar-reporte` — config y envío de reportes por email (nodemailer)
 
 ### Proceso SQL de una venta (Fase 1)
 
@@ -224,4 +227,6 @@ Con la app abierta, **detén la API** (Ctrl-C) y haz una venta: queda guardada y
       descuento de saldo) y **arqueo de caja** (efectivo esperado del turno).
 - [x] Seguridad: **guard JWT global** (API) + envío de token en web y caja (incl. sync offline)
 - [x] Reportes **PDF server-side** (pdfkit) además de Excel
-- [ ] Fase 4 (resto): serialización de comprobantes, ticket, correo/notificaciones, SPs restantes
+- [x] Comprobantes (series), **Ticket** (plantilla impresa) y **Correo** (config + envío
+      de reportes PDF por email con nodemailer). Disponibles en web y en la caja.
+- [ ] Fase 4 (resto): migrar SPs restantes, pruebas automatizadas
