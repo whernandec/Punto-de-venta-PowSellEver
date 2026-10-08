@@ -20,6 +20,7 @@ import { CobrosModule } from './cobros/cobros.module';
 import { SerializacionModule } from './serializacion/serializacion.module';
 import { TicketModule } from './ticket/ticket.module';
 import { CorreoModule } from './correo/correo.module';
+import { GruposModule } from './grupos/grupos.module';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { CorreoModule } from './correo/correo.module';
     SerializacionModule,
     TicketModule,
     CorreoModule,
+    GruposModule,
   ],
   controllers: [HealthController],
   providers: [

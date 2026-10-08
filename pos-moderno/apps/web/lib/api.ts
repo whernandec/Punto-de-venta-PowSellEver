@@ -121,6 +121,8 @@ export const api = {
   proveedores: () => get<ProveedorDTO[]>('/proveedores'),
   crearProveedor: (dto: CrearProveedorDTO) => post('/proveedores', dto),
   productos: () => get<Array<Record<string, unknown>>>('/productos'),
+  grupos: () => get<Array<{ idLine: number; linea: string }>>('/grupos'),
+  crearGrupo: (linea: string) => post('/grupos', { linea }),
   crearProducto: (dto: Record<string, unknown>) => post('/productos', dto),
   actualizarProducto: (id: number, dto: Record<string, unknown>) =>
     send('PATCH', `/productos/${id}`, dto),

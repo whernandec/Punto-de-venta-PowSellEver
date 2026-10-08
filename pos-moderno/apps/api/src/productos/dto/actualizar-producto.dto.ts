@@ -41,4 +41,16 @@ export class ActualizarProductoDto {
   @IsOptional()
   @IsNumber()
   stockMinimo?: number;
+
+  @IsOptional()
+  @IsString()
+  seVendeA?: string;
+
+  @IsOptional()
+  @IsNumber()
+  aPartirDe?: number;
+
+  @IsOptional()
+  @IsString()
+  fechaVencimiento?: string;
 }

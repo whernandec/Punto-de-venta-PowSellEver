@@ -49,6 +49,9 @@ export class ProductosService {
       precioMayoreo: dto.precioMayoreo,
       impuesto: dto.impuesto,
       stockMinimo: dto.stockMinimo,
+      seVendeA: dto.seVendeA,
+      aPartirDe: dto.aPartirDe,
+      fechaVencimiento: dto.fechaVencimiento,
     });
   }
 
@@ -65,6 +68,9 @@ export class ProductosService {
       precioMayoreo: dto.precioMayoreo,
       impuesto: dto.impuesto,
       stockMinimo: dto.stockMinimo,
+      seVendeA: dto.seVendeA,
+      aPartirDe: dto.aPartirDe,
+      fechaVencimiento: dto.fechaVencimiento,
     });
   }
 

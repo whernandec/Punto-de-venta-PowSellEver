@@ -49,4 +49,18 @@ export class CrearProductoDto {
   @IsOptional()
   @IsNumber()
   stockMinimo?: number;
+
+  /** 'UNIDAD' (por pieza) o 'GRANEL' (usa decimales). */
+  @IsOptional()
+  @IsString()
+  seVendeA?: string;
+
+  /** Unidades a partir de las cuales aplica el precio de mayoreo. */
+  @IsOptional()
+  @IsNumber()
+  aPartirDe?: number;
+
+  @IsOptional()
+  @IsString()
+  fechaVencimiento?: string;
 }

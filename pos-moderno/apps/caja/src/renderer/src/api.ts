@@ -161,8 +161,13 @@ export async function obtenerProductos(): Promise<ProductoDTO[]> {
 
 export const crearProducto = (dto: Record<string, unknown>) =>
   post('/productos', dto);
+export const actualizarProducto = (id: number, dto: Record<string, unknown>) =>
+  send('PATCH', `/productos/${id}`, dto);
 export const eliminarProducto = (id: number) =>
   send('DELETE', `/productos/${id}`);
+export const obtenerGrupos = () =>
+  get<Array<{ idLine: number; linea: string }>>('/grupos');
+export const crearGrupo = (linea: string) => post('/grupos', { linea });
 export const obtenerCompras = () =>
   get<Array<Record<string, unknown>>>('/compras');
 
