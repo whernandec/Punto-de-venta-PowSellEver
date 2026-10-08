@@ -47,7 +47,7 @@ export function VentasPage({ idCaja, idUsuario }: Props): JSX.Element {
   }, [modo]);
 
   const sugerencias = useMemo(() => {
-    if (modo !== 'teclado' || !busqueda.trim()) return [];
+    if (!busqueda.trim()) return [];
     const q = busqueda.toLowerCase();
     return productos
       .filter(
@@ -80,10 +80,18 @@ export function VentasPage({ idCaja, idUsuario }: Props): JSX.Element {
     const q = busqueda.trim();
     if (!q) return;
     if (modo === 'lectora') {
-      // La lectora "teclea" el código y manda Enter: match exacto por código.
-      const p = productos.find((x) => (x.codigo ?? '') === q);
+      // La lectora "teclea" el código y manda Enter: primero match exacto por
+      // código; si no, busca por nombre (o código) que contenga lo escrito.
+      const ql = q.toLowerCase();
+      const p =
+        productos.find((x) => (x.codigo ?? '') === q) ??
+        productos.find(
+          (x) =>
+            (x.descripcion ?? '').toLowerCase().includes(ql) ||
+            (x.codigo ?? '').toLowerCase().includes(ql),
+        );
       if (p) agregar(p);
-      else setError(`Código "${q}" no encontrado`);
+      else setError(`No se encontró producto por código o nombre: "${q}"`);
     } else {
       // Teclado: agrega la primera coincidencia.
       if (sugerencias[0]) agregar(sugerencias[0]);
