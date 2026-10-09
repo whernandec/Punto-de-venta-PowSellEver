@@ -58,12 +58,8 @@ export function CobroModal({ total, numeroDoc, clientes, onCancelar, onConfirmar
   const pagado = (Number(efectivo) || 0) + (Number(tarjeta) || 0) + (Number(credito) || 0);
   const vuelto = Math.max(0, pagado - total);
   const restante = Math.max(0, total - pagado);
-  // Monto a cobrar en terminal = total menos lo ya puesto en tarjeta/crédito
-  // (el efectivo se limpia al cobrar con terminal).
-  const montoTerminal = Math.max(
-    0,
-    total - (Number(tarjeta) || 0) - (Number(credito) || 0),
-  );
+  // La terminal cobra exactamente el monto puesto en Tarjeta (tarjeta sola o mixto).
+  const montoTerminal = Number(tarjeta) || 0;
 
   const set = (v: string): void => {
     if (campo === 'efectivo') setEfectivo(v);
@@ -83,9 +79,8 @@ export function CobroModal({ total, numeroDoc, clientes, onCancelar, onConfirmar
   }
 
   async function cobrarConTerminal(): Promise<void> {
-    const monto = montoTerminal;
+    const monto = montoTerminal; // = monto en Tarjeta
     if (monto <= 0) return;
-    setEfectivo('0'); // la terminal cubre el importe; no hay efectivo
     setProcesandoTerminal(true);
     setTerminalMsg('Enviando cobro a la terminal…');
     try {
@@ -97,8 +92,7 @@ export function CobroModal({ total, numeroDoc, clientes, onCancelar, onConfirmar
           const r = await estadoPagoTerminal(intentId);
           if (r.status === 'approved') {
             detenerPoll();
-            setTarjeta(((Number(tarjeta) || 0) + monto).toFixed(2));
-            setTerminalMsg(`✔ Pago aprobado en terminal${r.simulado ? ' (simulado)' : ''}.`);
+            setTerminalMsg(`✔ Pago con tarjeta aprobado${r.simulado ? ' (simulado)' : ''}.`);
             setExitoTerminal(true);
             intentRef.current = null;
           } else if (r.status === 'canceled' || r.status === 'rejected') {
