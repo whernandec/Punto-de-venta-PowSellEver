@@ -832,3 +832,72 @@ a.btn {
 }
 .dash__totales span { display: block; color: #bfdbfe; font-size: 13px; }
 .dash__totales strong { font-size: 22px; }
+
+/* ===== Configuraciones ===== */
+.cfg {
+  background: #1d4ed8;
+  min-height: 100vh;
+  padding: 16px 20px;
+}
+.cfg__back {
+  background: #0b1f5c;
+  color: #fff;
+  border: 1px solid #1e3a8a;
+  border-radius: 8px;
+  padding: 12px 18px;
+  font-weight: 800;
+  cursor: pointer;
+  margin-bottom: 18px;
+}
+.cfg__groups {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 1000px;
+}
+.cfg__group {
+  background: #0f2167;
+  border-radius: 8px;
+  padding: 14px 18px;
+}
+.cfg__group h3 {
+  color: #fff;
+  margin: 0 0 12px;
+}
+.cfg__items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.cfg__item {
+  background: transparent;
+  border: none;
+  color: #e5e7eb;
+  cursor: pointer;
+  width: 120px;
+  padding: 10px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+}
+.cfg__item:hover {
+  background: #1e3a8a;
+}
+.cfg__icon {
+  font-size: 44px;
+  line-height: 1;
+}
+.cfg__label {
+  font-size: 13px;
+}
+.modbar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 16px;
+  background: #0f172a;
+  color: #fff;
+}

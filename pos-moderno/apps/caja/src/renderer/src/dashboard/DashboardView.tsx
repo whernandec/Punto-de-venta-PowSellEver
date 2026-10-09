@@ -49,7 +49,7 @@ export function DashboardView({ usuario, onIr, onSalir }: Props): JSX.Element {
         <nav className="dash__nav">
           <button onClick={() => onIr('reportes')}>Reportes</button>
           <button onClick={() => onIr('inventario')}>Inventarios</button>
-          <button onClick={() => onIr('empresa')}>Configurar</button>
+          <button onClick={() => onIr('config')}>Configurar</button>
           <button className="nav--orange" onClick={() => onIr('compras')}>Comprar</button>
         </nav>
         <span className="dash__user">👑 {usuario?.nombres ?? usuario?.login ?? 'Administrador'}</span>

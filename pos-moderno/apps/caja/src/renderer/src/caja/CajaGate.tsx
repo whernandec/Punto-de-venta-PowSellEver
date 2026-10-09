@@ -2,72 +2,25 @@ import { useCallback, useEffect, useState } from 'react';
 import type { TurnoAbiertoDTO, UsuarioAutenticadoDTO } from '@pos/types';
 import { aperturaCaja, arqueoCaja, cierreCaja, turnoAbierto } from '../api';
 import { VentasPage } from '../ventas/VentasPage';
-import { InventarioView } from '../inventario/InventarioView';
-import { ComprasView } from '../compras/ComprasView';
-import { ProductosView } from '../productos/ProductosView';
-import { ProveedoresView } from '../proveedores/ProveedoresView';
-import { ClientesView } from '../clientes/ClientesView';
-import { CobrosView } from '../cobros/CobrosView';
-import { MovimientosView } from '../finanzas/MovimientosView';
-import { UsuariosView } from '../usuarios/UsuariosView';
-import { ReportesView } from '../reportes/ReportesView';
-import { EmpresaView } from '../empresa/EmpresaView';
-import { ComprobantesView } from '../comprobantes/ComprobantesView';
-import { TicketView } from '../ticket/TicketView';
-import { CorreoView } from '../correo/CorreoView';
-
-type Tab =
-  | 'ventas'
-  | 'inventario'
-  | 'compras'
-  | 'productos'
-  | 'proveedores'
-  | 'clientes'
-  | 'cobros'
-  | 'movimientos'
-  | 'usuarios'
-  | 'reportes'
-  | 'comprobantes'
-  | 'ticket'
-  | 'correo'
-  | 'empresa';
-
-const TABS: Array<{ key: Tab; label: string }> = [
-  { key: 'ventas', label: 'Ventas' },
-  { key: 'productos', label: 'Productos' },
-  { key: 'inventario', label: 'Inventario' },
-  { key: 'compras', label: 'Compras' },
-  { key: 'proveedores', label: 'Proveedores' },
-  { key: 'clientes', label: 'Clientes' },
-  { key: 'cobros', label: 'Cobros' },
-  { key: 'movimientos', label: 'Movimientos' },
-  { key: 'usuarios', label: 'Usuarios' },
-  { key: 'reportes', label: 'Reportes' },
-  { key: 'comprobantes', label: 'Comprobantes' },
-  { key: 'ticket', label: 'Ticket' },
-  { key: 'correo', label: 'Correo' },
-  { key: 'empresa', label: 'Empresa' },
-];
 
 interface Props {
   idCaja: number;
   usuario: UsuarioAutenticadoDTO;
-  tabInicial?: string;
+  onIr?: (modulo: string) => void;
   onInicio?: () => void;
 }
 
 /**
  * Exige un turno de caja ABIERTO antes de permitir vender.
  * - Sin turno → formulario de apertura (saldo inicial).
- * - Con turno → ventas + botón de cierre.
+ * - Con turno → pantalla POS (VentasPage). Lo administrativo vive en Configurar.
  */
-export function CajaGate({ idCaja, usuario, tabInicial, onInicio }: Props): JSX.Element {
+export function CajaGate({ idCaja, usuario, onIr, onInicio }: Props): JSX.Element {
   const [turno, setTurno] = useState<TurnoAbiertoDTO | null>(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saldoInicial, setSaldoInicial] = useState('0');
   const [cierreInfo, setCierreInfo] = useState<string | null>(null);
-  const [tab, setTab] = useState<Tab>((tabInicial as Tab) ?? 'ventas');
 
   const refrescar = useCallback(() => {
     setCargando(true);
@@ -96,7 +49,6 @@ export function CajaGate({ idCaja, usuario, tabInicial, onInicio }: Props): JSX.
   async function cerrar(): Promise<void> {
     setError(null);
     try {
-      // Arqueo del turno: calcula el efectivo esperado antes de cerrar.
       const arqueo = await arqueoCaja(idCaja);
       const esperado = arqueo?.saldoEsperado ?? turno?.saldoInicial ?? 0;
       await cierreCaja({
@@ -164,43 +116,14 @@ export function CajaGate({ idCaja, usuario, tabInicial, onInicio }: Props): JSX.
           <button onClick={cerrar}>Cerrar caja</button>
         </span>
       </div>
-
-      <nav className="tabs">
-        {TABS.map((t) => (
-          <button
-            key={t.key}
-            className={tab === t.key ? 'tabs__btn tabs__btn--on' : 'tabs__btn'}
-            onClick={() => setTab(t.key)}
-          >
-            {t.label}
-          </button>
-        ))}
-      </nav>
-
       {error && <p className="alert alert--error">{error}</p>}
-
-      {tab === 'ventas' && (
-        <VentasPage
-          idCaja={idCaja}
-          idUsuario={usuario.idUsuario}
-          usuario={usuario}
-          onIr={(t) => setTab(t as Tab)}
-          onCerrarTurno={cerrar}
-        />
-      )}
-      {tab === 'productos' && <ProductosView />}
-      {tab === 'inventario' && <InventarioView idCaja={idCaja} idUsuario={usuario.idUsuario} />}
-      {tab === 'compras' && <ComprasView idCaja={idCaja} idUsuario={usuario.idUsuario} />}
-      {tab === 'proveedores' && <ProveedoresView />}
-      {tab === 'clientes' && <ClientesView />}
-      {tab === 'cobros' && <CobrosView idCaja={idCaja} idUsuario={usuario.idUsuario} />}
-      {tab === 'movimientos' && <MovimientosView idCaja={idCaja} />}
-      {tab === 'usuarios' && <UsuariosView />}
-      {tab === 'reportes' && <ReportesView />}
-      {tab === 'comprobantes' && <ComprobantesView />}
-      {tab === 'ticket' && <TicketView />}
-      {tab === 'correo' && <CorreoView />}
-      {tab === 'empresa' && <EmpresaView />}
+      <VentasPage
+        idCaja={idCaja}
+        idUsuario={usuario.idUsuario}
+        usuario={usuario}
+        onIr={onIr}
+        onCerrarTurno={cerrar}
+      />
     </>
   );
 }
