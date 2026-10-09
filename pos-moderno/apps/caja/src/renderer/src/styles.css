@@ -468,57 +468,103 @@ a.btn {
   margin: 8px 0;
 }
 
-/* ===== Pantalla POS (Ventas) ===== */
+/* ===== Pantalla POS (Ventas) — diseño claro ===== */
 .pos {
-  background: #111418;
-  color: #e5e7eb;
+  background: #ffffff;
+  color: #1f2937;
   min-height: calc(100vh - 150px);
-  padding: 10px 14px;
-}
-.pos__search {
+  padding: 8px 12px 0;
   display: flex;
-  gap: 12px;
+  flex-direction: column;
+}
+.pos__top {
+  display: flex;
   align-items: center;
+  gap: 12px;
+}
+.pos__brand {
+  font-size: 22px;
+  font-weight: 800;
+  color: #111827;
+  white-space: nowrap;
 }
 .pos__input {
   flex: 1;
-  padding: 12px 14px;
-  font-size: 16px;
-  border: 2px solid #374151;
-  border-radius: 6px;
-  background: #fff;
-  color: #111;
+  padding: 10px 12px;
+  font-size: 15px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
 }
 .pos__toggle {
   display: flex;
-  border: 1px solid #4b5563;
-  border-radius: 6px;
-  overflow: hidden;
+  gap: 6px;
 }
 .pos__toggle button {
-  background: #1f2937;
-  color: #cbd5e1;
-  border: none;
-  padding: 12px 18px;
-  font-size: 15px;
+  border: 1px solid #cbd5e1;
+  background: #f1f5f9;
+  padding: 10px 14px;
+  border-radius: 4px;
+  font-weight: 700;
   cursor: pointer;
 }
 .pos__toggle button.on {
-  background: #bbf7d0;
-  color: #065f46;
+  background: #22c55e;
+  color: #fff;
+  border-color: #16a34a;
+}
+.pos__user {
   font-weight: 700;
+  color: #111827;
+  white-space: nowrap;
+}
+.pos__acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin: 8px 0;
+}
+.pos__acts button {
+  border: none;
+  background: none;
+  color: #15803d;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 14px;
+}
+.pos__acts button.act-on {
+  color: #b45309;
+  text-decoration: underline;
+}
+.pos__ctas {
+  display: flex;
+  gap: 12px;
+  margin: 4px 0 10px;
+}
+.cta {
+  border: none;
+  border-radius: 10px;
+  padding: 12px 22px;
+  font-size: 16px;
+  font-weight: 800;
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+.cta--blue {
+  background: #38bdf8;
+}
+.cta--orange {
+  background: #f59e0b;
 }
 .pos__sugerencias {
   list-style: none;
-  margin: 6px 0 0;
+  margin: 0 0 8px;
   padding: 0;
   background: #fff;
-  color: #111;
+  border: 1px solid #e2e8f0;
   border-radius: 6px;
-  max-width: 60%;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
-  position: relative;
-  z-index: 5;
+  max-width: 55%;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
 }
 .pos__sugerencias li {
   display: flex;
@@ -534,71 +580,62 @@ a.btn {
   color: #94a3b8;
   font-size: 13px;
 }
-.pos__sugerencias .muted {
-  color: #64748b;
-}
 .pos__body {
   display: grid;
-  grid-template-columns: 1fr 360px;
-  gap: 14px;
-  margin-top: 12px;
+  grid-template-columns: 1fr 340px;
+  gap: 16px;
+  flex: 1;
 }
 .pos__cart table {
   width: 100%;
   border-collapse: collapse;
-  background: transparent;
-  color: #e5e7eb;
-  box-shadow: none;
+  font-size: 14px;
 }
 .pos__cart th {
   text-align: left;
-  color: #9ca3af;
-  border-bottom: 1px solid #374151;
-  padding: 8px;
-  font-size: 13px;
-}
-.pos__cart td {
-  padding: 8px;
-  border-bottom: 1px solid #1f2937;
-}
-.pos__cart th.num,
-.pos__cart td.num {
-  text-align: right;
-}
-.pos__cart tr.sel {
-  background: #1e293b;
-}
-.pos__cart button {
-  background: #374151;
+  color: #334155;
+  border-bottom: 2px solid #e2e8f0;
+  padding: 6px 8px;
+  background: #3b82f6;
   color: #fff;
-  border: none;
+}
+.pos__cart th.num { text-align: right; }
+.pos__cart td {
+  padding: 6px 8px;
+  border-bottom: 1px solid #eef2f7;
+}
+.pos__cart td.num { text-align: right; }
+.pos__cart tr.sel { background: #e0f2fe; }
+.pos__cart button {
+  background: #e5e7eb;
+  border: 1px solid #cbd5e1;
   border-radius: 4px;
-  padding: 4px 10px;
+  padding: 2px 10px;
   cursor: pointer;
 }
 .pos__cart button.x {
-  background: #dc2626;
+  background: #ef4444;
+  color: #fff;
+  border: none;
   border-radius: 999px;
 }
 .pos__panel {
-  background: #1b1f24;
+  background: #f8fafc;
   border-radius: 8px;
   padding: 14px;
 }
 .pos__totalbox {
-  background: #2b3038;
-  color: #fff;
-  font-size: 34px;
+  text-align: right;
+  font-size: 48px;
   font-weight: 800;
-  padding: 12px 16px;
-  border-radius: 6px;
+  color: #111827;
+  padding: 4px 8px;
 }
 .pos__display {
   width: 100%;
-  height: 40px;
-  margin: 12px 0;
-  background: #fff;
-  border: none;
+  height: 36px;
+  margin: 8px 0 12px;
+  border: 1px solid #cbd5e1;
   border-radius: 4px;
   font-size: 20px;
   text-align: right;
@@ -606,51 +643,88 @@ a.btn {
 }
 .keypad {
   display: grid;
-  grid-template-columns: repeat(3, 1fr) 1.5fr;
+  grid-template-columns: repeat(3, 1fr) 1.3fr;
   gap: 8px;
 }
 .keypad button {
-  background: #2b3038;
+  background: #3f3f46;
   color: #fff;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   padding: 16px 0;
-  font-size: 20px;
+  font-size: 22px;
+  font-weight: 700;
   cursor: pointer;
 }
-.keypad button:hover {
-  background: #3a414b;
-}
+.keypad button:hover { background: #52525b; }
 .keypad .k-act {
   font-size: 15px;
-  font-weight: 700;
-  background: #323842;
+  background: #27272a;
 }
 .pos__totales {
-  margin: 12px 0;
-  font-size: 14px;
+  margin: 12px 4px;
+  font-size: 16px;
 }
 .pos__totales div {
   display: flex;
   justify-content: space-between;
   padding: 2px 0;
-  color: #cbd5e1;
+  color: #334155;
 }
 .pos__cobrar {
   width: 100%;
-  background: #2b3038;
+  background: #22c55e;
   color: #fff;
-  border: 2px solid #4b5563;
-  border-radius: 6px;
-  padding: 16px;
-  font-size: 22px;
+  border: none;
+  border-radius: 999px;
+  padding: 14px;
+  font-size: 20px;
   font-weight: 800;
   cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
-.pos__cobrar:hover {
-  background: #16a34a;
+.pos__cobrar:hover { background: #16a34a; }
+.pos__cobrar:disabled { opacity: 0.5; cursor: not-allowed; }
+.pos__bottom {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  border-top: 1px solid #e2e8f0;
+  margin-top: 10px;
+  padding: 8px 2px;
 }
-.pos__cobrar:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+.pos__bottom button {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-weight: 700;
+  color: #334155;
+  font-size: 14px;
 }
+.pos__bottom button:disabled { opacity: 0.4; cursor: not-allowed; }
+.pos__bottom-right {
+  margin-left: auto;
+  display: flex;
+  gap: 18px;
+}
+
+/* ---- Tema oscuro ---- */
+.pos--dark {
+  background: #0f1115;
+  color: #e5e7eb;
+}
+.pos--dark .pos__brand,
+.pos--dark .pos__user { color: #f1f5f9; }
+.pos--dark .pos__input,
+.pos--dark .pos__display {
+  background: #1b1f24;
+  color: #e5e7eb;
+  border-color: #374151;
+}
+.pos--dark .pos__panel { background: #1b1f24; }
+.pos--dark .pos__totalbox { color: #fff; }
+.pos--dark .pos__cart td { border-color: #1f2937; }
+.pos--dark .pos__cart tr.sel { background: #1e293b; }
+.pos--dark .pos__totales div { color: #cbd5e1; }
+.pos--dark .pos__bottom button { color: #cbd5e1; }
+.pos--dark .pos__toggle button { background: #1f2937; color: #cbd5e1; }

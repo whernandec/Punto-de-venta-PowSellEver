@@ -169,7 +169,15 @@ export function CajaGate({ idCaja, usuario }: Props): JSX.Element {
 
       {error && <p className="alert alert--error">{error}</p>}
 
-      {tab === 'ventas' && <VentasPage idCaja={idCaja} idUsuario={usuario.idUsuario} />}
+      {tab === 'ventas' && (
+        <VentasPage
+          idCaja={idCaja}
+          idUsuario={usuario.idUsuario}
+          usuario={usuario}
+          onIr={(t) => setTab(t as Tab)}
+          onCerrarTurno={cerrar}
+        />
+      )}
       {tab === 'productos' && <ProductosView />}
       {tab === 'inventario' && <InventarioView idCaja={idCaja} idUsuario={usuario.idUsuario} />}
       {tab === 'compras' && <ComprasView idCaja={idCaja} idUsuario={usuario.idUsuario} />}
