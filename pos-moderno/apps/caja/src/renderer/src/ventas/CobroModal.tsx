@@ -72,14 +72,32 @@ export function CobroModal({ total, numeroDoc, clientes, onCancelar, onConfirmar
         <div className="cobro__left">
           <div className="cobro__total">$ {total.toFixed(2)}</div>
           <div className="cobro__pagos">
-            <label className={campo === 'efectivo' ? 'on' : ''} onClick={() => setCampo('efectivo')}>
-              Efectivo: <input value={efectivo} readOnly />
+            <label className={campo === 'efectivo' ? 'on' : ''}>
+              Efectivo:
+              <input
+                inputMode="decimal"
+                value={efectivo}
+                onFocus={(e) => { setCampo('efectivo'); e.target.select(); }}
+                onChange={(e) => setEfectivo(e.target.value)}
+              />
             </label>
-            <label className={campo === 'tarjeta' ? 'on' : ''} onClick={() => setCampo('tarjeta')}>
-              Tarjeta: <input value={tarjeta} readOnly />
+            <label className={campo === 'tarjeta' ? 'on' : ''}>
+              Tarjeta:
+              <input
+                inputMode="decimal"
+                value={tarjeta}
+                onFocus={(e) => { setCampo('tarjeta'); e.target.select(); }}
+                onChange={(e) => setTarjeta(e.target.value)}
+              />
             </label>
-            <label className={campo === 'credito' ? 'on' : ''} onClick={() => setCampo('credito')}>
-              Credito: <input value={credito} readOnly />
+            <label className={campo === 'credito' ? 'on' : ''}>
+              Credito:
+              <input
+                inputMode="decimal"
+                value={credito}
+                onFocus={(e) => { setCampo('credito'); e.target.select(); }}
+                onChange={(e) => setCredito(e.target.value)}
+              />
             </label>
           </div>
           <div className="cobro__vuelto">Vuelto: <strong>{vuelto.toFixed(2)}</strong></div>
