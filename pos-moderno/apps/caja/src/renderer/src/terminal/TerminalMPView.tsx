@@ -142,10 +142,19 @@ export function TerminalMPView(): JSX.Element {
       </div>
 
       <div className="panel" style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-        {cfg?.conectado ? (
+        {cfg?.conectado && cfg.real ? (
           <>
             <span style={{ color: '#16a34a', fontWeight: 700 }}>
               ✔ Cuenta conectada {cfg.cuenta ? `(${cfg.cuenta})` : ''}
+            </span>
+            <button className="btn btn--ghost" type="button" onClick={() => void desconectar()}>
+              Desvincular
+            </button>
+          </>
+        ) : cfg?.conectado && !cfg.real ? (
+          <>
+            <span style={{ color: '#f59e0b', fontWeight: 700 }}>
+              ⚠ Conexión SIMULADA — pega tu Access Token REAL (APP_USR-…) abajo para producción.
             </span>
             <button className="btn btn--ghost" type="button" onClick={() => void desconectar()}>
               Desvincular

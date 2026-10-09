@@ -12,6 +12,7 @@ export default function TerminalPage(): JSX.Element {
   const [simulacion, setSimulacion] = useState(true);
   const [devices, setDevices] = useState<Array<{ id: string; name: string }>>([]);
   const [conectado, setConectado] = useState(false);
+  const [real, setReal] = useState(false);
   const [cuenta, setCuenta] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
@@ -26,6 +27,7 @@ export default function TerminalPage(): JSX.Element {
         setStoreId(String(c.storeId ?? ''));
         setTokenConfigurado(Boolean(c.tokenConfigurado));
         setConectado(Boolean(c.conectado));
+        setReal(Boolean(c.real));
         setCuenta(String(c.cuenta ?? ''));
       })
       .catch((e: Error) => setError(e.message));
@@ -101,9 +103,14 @@ export default function TerminalPage(): JSX.Element {
       </div>
 
       <div className="panel" style={{ display: 'flex', alignItems: 'center', gap: 16, maxWidth: 560 }}>
-        {conectado ? (
+        {conectado && real ? (
           <>
             <span style={{ color: '#16a34a', fontWeight: 700 }}>✔ Cuenta conectada {cuenta ? `(${cuenta})` : ''}</span>
+            <button className="btn btn--ghost" type="button" onClick={() => void desconectar()}>Desvincular</button>
+          </>
+        ) : conectado && !real ? (
+          <>
+            <span style={{ color: '#b45309', fontWeight: 700 }}>⚠ Conexión SIMULADA — pega tu Access Token REAL (APP_USR-…) abajo.</span>
             <button className="btn btn--ghost" type="button" onClick={() => void desconectar()}>Desvincular</button>
           </>
         ) : (

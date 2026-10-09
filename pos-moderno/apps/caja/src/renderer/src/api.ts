@@ -293,6 +293,7 @@ export interface TerminalConfig {
   storeId: string;
   tokenConfigurado: boolean;
   conectado: boolean;
+  real: boolean;
   cuenta: string;
 }
 export const obtenerTerminal = () => get<TerminalConfig>('/terminal');

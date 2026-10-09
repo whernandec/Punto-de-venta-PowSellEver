@@ -71,6 +71,20 @@ export class TerminalService {
     });
   }
 
+  /** true si hay un Access Token REAL (no el simulado). */
+  private esTokenReal(c: MpConfig): boolean {
+    return !!c.accessToken && !c.accessToken.startsWith('SIM-');
+  }
+
+  private exigirTokenReal(c: MpConfig): void {
+    if (!this.esTokenReal(c)) {
+      throw new BadRequestException(
+        'El Access Token guardado es simulado. Pulsa “Desvincular”, pega tu Access ' +
+          'Token REAL de Mercado Pago (APP_USR-…) y guarda antes de operar con la terminal.',
+      );
+    }
+  }
+
   /** Config pública (sin exponer el access token). */
   async obtener() {
     const c = await this.getConfig();
@@ -82,6 +96,7 @@ export class TerminalService {
       storeId: c.storeId ?? '',
       tokenConfigurado: !!c.accessToken,
       conectado: !!c.conectado || !!c.accessToken,
+      real: this.esTokenReal(c),
       cuenta: c.userId ?? '',
     };
   }
@@ -179,11 +194,18 @@ export class TerminalService {
 
   async guardar(dto: GuardarTerminalDto) {
     const actual = await this.getConfig();
+    const tokenNuevo = dto.accessToken ? dto.accessToken : actual.accessToken;
     const nueva: MpConfig = {
       enabled: dto.enabled ?? actual.enabled,
       simulacion: dto.simulacion ?? actual.simulacion,
       // Si no envían token, se conserva el existente.
-      accessToken: dto.accessToken ? dto.accessToken : actual.accessToken,
+      accessToken: tokenNuevo,
+      refreshToken: actual.refreshToken,
+      // Al pegar un token manual real se considera conectado; se limpia la cuenta simulada.
+      conectado: dto.accessToken
+        ? !dto.accessToken.startsWith('SIM-')
+        : actual.conectado,
+      userId: dto.accessToken ? undefined : actual.userId,
       deviceId: dto.deviceId ?? actual.deviceId,
       storeId: dto.storeId ?? actual.storeId,
     };
@@ -228,7 +250,13 @@ export class TerminalService {
   /** Pone el dispositivo en modo integrado (PDV) o autónomo (STANDALONE). */
   async modoDispositivo(deviceId: string, modo: 'PDV' | 'STANDALONE') {
     const c = await this.getConfig();
-    if (c.simulacion || !c.accessToken) return { ok: true, simulado: true, modo };
+    if (c.simulacion) return { ok: true, simulado: true, modo };
+    this.exigirTokenReal(c);
+    if (deviceId.startsWith('SIM-')) {
+      throw new BadRequestException(
+        'El Device ID es simulado. Pulsa “Probar dispositivos” y elige tu terminal real.',
+      );
+    }
     const res = await fetch(`${MP_BASE}/devices/${deviceId}`, {
       method: 'PATCH',
       headers: { Authorization: `Bearer ${c.accessToken}`, 'Content-Type': 'application/json' },
@@ -246,7 +274,7 @@ export class TerminalService {
     const c = await this.getConfig();
     if (!c.enabled) throw new BadRequestException('La terminal no está habilitada');
     if (c.simulacion) return { intentId: `SIM-${Date.now()}`, simulado: true };
-    if (!c.accessToken) throw new BadRequestException('Falta access token');
+    this.exigirTokenReal(c);
     this.validarDeviceReal(c);
     const crear = await fetch(`${MP_BASE}/devices/${c.deviceId}/payment-intents`, {
       method: 'POST',
