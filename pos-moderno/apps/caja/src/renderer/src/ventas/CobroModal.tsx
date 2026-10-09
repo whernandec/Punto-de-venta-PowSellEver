@@ -54,6 +54,12 @@ export function CobroModal({ total, numeroDoc, clientes, onCancelar, onConfirmar
   const pagado = (Number(efectivo) || 0) + (Number(tarjeta) || 0) + (Number(credito) || 0);
   const vuelto = Math.max(0, pagado - total);
   const restante = Math.max(0, total - pagado);
+  // Monto a cobrar en terminal = total menos lo ya puesto en tarjeta/crédito
+  // (el efectivo se limpia al cobrar con terminal).
+  const montoTerminal = Math.max(
+    0,
+    total - (Number(tarjeta) || 0) - (Number(credito) || 0),
+  );
 
   const set = (v: string): void => {
     if (campo === 'efectivo') setEfectivo(v);
@@ -73,7 +79,9 @@ export function CobroModal({ total, numeroDoc, clientes, onCancelar, onConfirmar
   }
 
   async function cobrarConTerminal(): Promise<void> {
-    const monto = restante > 0 ? restante : total;
+    const monto = montoTerminal;
+    if (monto <= 0) return;
+    setEfectivo('0'); // la terminal cubre el importe; no hay efectivo
     setProcesandoTerminal(true);
     setTerminalMsg('Enviando cobro a la terminal…');
     try {
@@ -201,7 +209,7 @@ export function CobroModal({ total, numeroDoc, clientes, onCancelar, onConfirmar
           {terminalOn && !procesandoTerminal && (
             <button
               className="cobro__terminal"
-              disabled={restante <= 0}
+              disabled={montoTerminal <= 0}
               onClick={() => setConfirmandoTerminal(true)}
             >
               💳 Cobrar con Terminal MP
@@ -231,7 +239,7 @@ export function CobroModal({ total, numeroDoc, clientes, onCancelar, onConfirmar
           <div className="dlg">
             <div className="dlg__box">
               <h3>Cobrar con Terminal</h3>
-              <p>¿Enviar un cobro de <strong>$ {(restante > 0 ? restante : total).toFixed(2)}</strong> a la terminal Mercado Pago?</p>
+              <p>¿Enviar un cobro de <strong>$ {montoTerminal.toFixed(2)}</strong> a la terminal Mercado Pago?</p>
               <div className="dlg__btns">
                 <button className="btn btn--ghost" onClick={() => setConfirmandoTerminal(false)}>Cancelar</button>
                 <button className="cobro__terminal" onClick={() => { setConfirmandoTerminal(false); void cobrarConTerminal(); }}>Sí, cobrar</button>
