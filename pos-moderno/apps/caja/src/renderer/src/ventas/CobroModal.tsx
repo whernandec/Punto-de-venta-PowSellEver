@@ -35,6 +35,7 @@ export function CobroModal({ total, numeroDoc, clientes, onCancelar, onConfirmar
   const [idCliente, setIdCliente] = useState<number | ''>('');
   const [tipoDoc, setTipoDoc] = useState<'BOLETA' | 'FACTURA'>('BOLETA');
   const [terminalOn, setTerminalOn] = useState(false);
+  const [terminalSim, setTerminalSim] = useState(false);
   const [terminalMsg, setTerminalMsg] = useState<string | null>(null);
   const [procesandoTerminal, setProcesandoTerminal] = useState(false);
   const [confirmandoTerminal, setConfirmandoTerminal] = useState(false);
@@ -44,7 +45,10 @@ export function CobroModal({ total, numeroDoc, clientes, onCancelar, onConfirmar
 
   useEffect(() => {
     obtenerTerminal()
-      .then((c) => setTerminalOn(c.enabled))
+      .then((c) => {
+        setTerminalOn(c.enabled);
+        setTerminalSim(c.simulacion);
+      })
       .catch(() => setTerminalOn(false));
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
@@ -214,6 +218,12 @@ export function CobroModal({ total, numeroDoc, clientes, onCancelar, onConfirmar
             >
               💳 Cobrar con Terminal MP
             </button>
+          )}
+          {terminalOn && terminalSim && (
+            <div className="muted" style={{ color: '#f59e0b' }}>
+              ⚠ Modo simulación: aprueba sin usar la terminal física. Desactívalo en
+              Configurar → Terminales para cobros reales.
+            </div>
           )}
           {terminalOn && procesandoTerminal && (
             <button className="cobro__cancelar" onClick={() => void cancelarTerminal()}>
