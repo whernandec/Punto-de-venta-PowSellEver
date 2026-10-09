@@ -37,6 +37,8 @@ export function CobroModal({ total, numeroDoc, clientes, onCancelar, onConfirmar
   const [terminalOn, setTerminalOn] = useState(false);
   const [terminalMsg, setTerminalMsg] = useState<string | null>(null);
   const [procesandoTerminal, setProcesandoTerminal] = useState(false);
+  const [confirmandoTerminal, setConfirmandoTerminal] = useState(false);
+  const [exitoTerminal, setExitoTerminal] = useState(false);
   const intentRef = useRef<string | null>(null);
   const pollRef = useRef<number | null>(null);
 
@@ -85,6 +87,7 @@ export function CobroModal({ total, numeroDoc, clientes, onCancelar, onConfirmar
             detenerPoll();
             setTarjeta(((Number(tarjeta) || 0) + monto).toFixed(2));
             setTerminalMsg(`✔ Pago aprobado en terminal${r.simulado ? ' (simulado)' : ''}.`);
+            setExitoTerminal(true);
             intentRef.current = null;
           } else if (r.status === 'canceled' || r.status === 'rejected') {
             detenerPoll();
@@ -199,7 +202,7 @@ export function CobroModal({ total, numeroDoc, clientes, onCancelar, onConfirmar
             <button
               className="cobro__terminal"
               disabled={restante <= 0}
-              onClick={() => void cobrarConTerminal()}
+              onClick={() => setConfirmandoTerminal(true)}
             >
               💳 Cobrar con Terminal MP
             </button>
@@ -223,6 +226,33 @@ export function CobroModal({ total, numeroDoc, clientes, onCancelar, onConfirmar
           </div>
           <div className="cobro__ticket">TICKET {numeroDoc}</div>
         </div>
+
+        {confirmandoTerminal && (
+          <div className="dlg">
+            <div className="dlg__box">
+              <h3>Cobrar con Terminal</h3>
+              <p>¿Enviar un cobro de <strong>$ {(restante > 0 ? restante : total).toFixed(2)}</strong> a la terminal Mercado Pago?</p>
+              <div className="dlg__btns">
+                <button className="btn btn--ghost" onClick={() => setConfirmandoTerminal(false)}>Cancelar</button>
+                <button className="cobro__terminal" onClick={() => { setConfirmandoTerminal(false); void cobrarConTerminal(); }}>Sí, cobrar</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {exitoTerminal && (
+          <div className="dlg">
+            <div className="dlg__box dlg__box--ok">
+              <div style={{ fontSize: 56 }}>✅</div>
+              <h2 style={{ color: '#16a34a', margin: '6px 0' }}>¡Pago aprobado en la terminal!</h2>
+              <p>El cobro se realizó correctamente. Finaliza la venta:</p>
+              <div className="dlg__btns">
+                <button className="cobro__directo" onClick={() => { setExitoTerminal(false); confirmar('directo'); }}>🖨 Imprimir y finalizar</button>
+                <button className="cobro__pantalla" onClick={() => { setExitoTerminal(false); confirmar('pantalla'); }}>Ver en pantalla</button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
