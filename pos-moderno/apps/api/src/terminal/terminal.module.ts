@@ -222,7 +222,13 @@ export class TerminalService {
       headers: { Authorization: `Bearer ${c.accessToken}` },
     });
     const data = (await res.json()) as {
-      devices?: Array<{ id: string; operating_mode?: string }>;
+      devices?: Array<{
+        id: string;
+        operating_mode?: string;
+        store_id?: string | number;
+        pos_id?: string | number;
+        external_pos_id?: string;
+      }>;
       message?: string;
     };
     if (!res.ok) {
@@ -234,6 +240,8 @@ export class TerminalService {
       id: d.id,
       name: d.id,
       operating_mode: d.operating_mode ?? '',
+      store_id: d.store_id ? String(d.store_id) : '',
+      pos_id: d.pos_id ? String(d.pos_id) : '',
     }));
   }
 

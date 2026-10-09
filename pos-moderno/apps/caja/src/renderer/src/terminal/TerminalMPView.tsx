@@ -17,7 +17,7 @@ export function TerminalMPView(): JSX.Element {
   const [enabled, setEnabled] = useState(false);
   const [simulacion, setSimulacion] = useState(true);
   const [devices, setDevices] = useState<
-    Array<{ id: string; name: string; operating_mode?: string }>
+    Array<{ id: string; name: string; operating_mode?: string; store_id?: string; pos_id?: string }>
   >([]);
   const [error, setError] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
@@ -139,6 +139,14 @@ export function TerminalMPView(): JSX.Element {
           <a href="https://www.mercadopago.com/developers/es/docs/mp-point/landing" target="_blank" rel="noreferrer">📄 Documentación Mercado Pago Point ↗</a>
           <a href="https://www.mercadopago.com/developers/panel/app" target="_blank" rel="noreferrer">🔑 Obtener Access Token ↗</a>
         </div>
+        <div style={{ marginTop: 10, borderTop: '1px solid #bfdbfe', paddingTop: 8 }}>
+          <strong>Si ves errores de Mercado Pago:</strong>
+          <ul style={{ margin: '6px 0', paddingLeft: 20 }}>
+            <li><em>“Device is not allowed to perform this action”</em>: tu equipo no permite cambiar el modo por API. Ponlo en <strong>modo Integrado/Punto de venta desde la propia terminal</strong> (Configuración → Modo de operación → Integrado/PDV).</li>
+            <li><em>“device and site configuration not found”</em>: la terminal <strong>no está asociada a una Sucursal y Caja</strong>. En tu cuenta MP crea <strong>Sucursal</strong> y <strong>Caja (punto de venta)</strong> y asócia la terminal. En la tabla de abajo la columna “Sucursal/Caja” debe dejar de decir “sin asociar”.</li>
+          </ul>
+          <a href="https://www.mercadopago.com/developers/es/docs/mp-point/integration-configuration/integration-via-pdv" target="_blank" rel="noreferrer">📄 Configurar PDV / Sucursal y Caja ↗</a>
+        </div>
       </div>
 
       <div className="panel" style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
@@ -203,12 +211,13 @@ export function TerminalMPView(): JSX.Element {
 
       {devices.length > 0 && (
         <table className="tabla" style={{ marginTop: 12 }}>
-          <thead><tr><th>ID del dispositivo</th><th>Modo</th><th></th><th></th></tr></thead>
+          <thead><tr><th>ID del dispositivo</th><th>Modo</th><th>Sucursal/Caja</th><th></th><th></th></tr></thead>
           <tbody>
             {devices.map((d) => (
               <tr key={d.id}>
                 <td>{d.id}{deviceId === d.id ? ' ✓' : ''}</td>
                 <td>{d.operating_mode || '—'}</td>
+                <td>{d.store_id || d.pos_id ? `${d.store_id || '—'} / ${d.pos_id || '—'}` : '⚠ sin asociar'}</td>
                 <td>
                   <button onClick={() => setDeviceId(d.id)}>Usar</button>
                 </td>
