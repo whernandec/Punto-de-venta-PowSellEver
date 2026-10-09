@@ -75,6 +75,38 @@ export function TerminalMPView(): JSX.Element {
       {error && <p className="alert alert--error">{error}</p>}
       {msg && <p className="alert alert--ok">{msg}</p>}
 
+      <div className="instructivo">
+        <strong>¿Cómo configurar tu terminal?</strong>
+        <ol>
+          <li>
+            Crea una aplicación en el panel de Mercado Pago (tipo “Pagos presenciales / Point”):{' '}
+            <a href="https://www.mercadopago.com/developers/panel/app" target="_blank" rel="noreferrer">
+              Abrir panel de Mercado Pago ↗
+            </a>
+          </li>
+          <li>
+            En <em>Credenciales</em> copia el <strong>Access Token</strong> (producción
+            <code> APP_USR-… </code>) y pégalo abajo. Luego pulsa <strong>Guardar</strong>.
+          </li>
+          <li>
+            Pulsa <strong>Probar dispositivos</strong> para listar tus terminales y elige
+            <strong> “Usar”</strong>. (Tu terminal debe estar comprada y asociada a tu cuenta MP.)
+          </li>
+          <li>
+            Pulsa <strong>“Modo integrado (PDV)”</strong> en tu terminal para que reciba cobros
+            desde el sistema.
+          </li>
+          <li>
+            Marca <strong>Habilitar cobro con terminal</strong> y desactiva
+            <strong> Simulación</strong>.
+          </li>
+        </ol>
+        <div className="instructivo__links">
+          <a href="https://www.mercadopago.com/developers/es/docs/mp-point/landing" target="_blank" rel="noreferrer">📄 Documentación Mercado Pago Point ↗</a>
+          <a href="https://www.mercadopago.com/developers/panel/app" target="_blank" rel="noreferrer">🔑 Obtener Access Token ↗</a>
+        </div>
+      </div>
+
       <form className="panel" onSubmit={guardar}>
         <div className="row" style={{ marginBottom: 10 }}>
           <label><input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} /> Habilitar cobro con terminal</label>
