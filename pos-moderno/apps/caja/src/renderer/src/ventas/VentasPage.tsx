@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type {
+  ClienteDTO,
   ProductoDTO,
   RegistrarVentaDTO,
   UsuarioAutenticadoDTO,
 } from '@pos/types';
-import { obtenerProductos } from '../api';
+import { obtenerClientes, obtenerEmpresa, obtenerProductos } from '../api';
+import { CobroModal, type DatosCobro } from './CobroModal';
+import { TicketPreview, type TicketData } from './TicketPreview';
 
 interface Props {
   idCaja: number;
@@ -41,10 +44,17 @@ export function VentasPage({
   const [oscuro, setOscuro] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
+  const [clientes, setClientes] = useState<ClienteDTO[]>([]);
+  const [empresaNombre, setEmpresaNombre] = useState('Mi Negocio');
+  const [mostrarCobro, setMostrarCobro] = useState(false);
+  const [docActual, setDocActual] = useState('');
+  const [ticketData, setTicketData] = useState<TicketData | null>(null);
   const buscarRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     obtenerProductos().then(setProductos).catch((e: Error) => setError(e.message));
+    obtenerClientes().then(setClientes).catch(() => undefined);
+    obtenerEmpresa().then((e) => setEmpresaNombre((e?.nombreEmpresa as string) ?? 'Mi Negocio')).catch(() => undefined);
   }, []);
   useEffect(() => {
     buscarRef.current?.focus();
@@ -170,20 +180,39 @@ export function VentasPage({
     });
   }
 
-  const cobrar = useCallback(async (): Promise<void> => {
+  // Abre el modal de cobro (botón/F3).
+  const cobrar = useCallback((): void => {
     if (carrito.length === 0) return;
+    setDocActual(`T-${Date.now()}`);
+    setMostrarCobro(true);
+  }, [carrito.length]);
+
+  // Confirma el cobro desde el modal: registra la venta y según el modo
+  // imprime directo o muestra la vista del ticket.
+  async function confirmarCobro(datos: DatosCobro): Promise<void> {
     setError(null);
-    const numeroDeDoc = `T-${Date.now()}`;
+    const tipoPago =
+      datos.credito > 0
+        ? 'Credito'
+        : datos.tarjeta > 0 && datos.efectivo > 0
+          ? 'Mixto'
+          : datos.tarjeta > 0
+            ? 'Tarjeta'
+            : 'Efectivo';
     const venta: RegistrarVentaDTO = {
       idCaja,
       idUsuario,
-      tipoPago: 'Efectivo',
-      numeroDeDoc,
-      comprobante: 'TICKET',
+      idCliente: datos.idCliente,
+      tipoPago,
+      numeroDeDoc: docActual,
+      comprobante: datos.tipoDoc === 'FACTURA' ? 'FACTURA' : 'TICKET',
       montoTotal: total,
-      efectivo: total,
-      pagoCon: total,
-      vuelto: 0,
+      efectivo: datos.efectivo,
+      tarjeta: datos.tarjeta,
+      credito: datos.credito,
+      saldo: datos.credito,
+      pagoCon: datos.efectivo + datos.tarjeta + datos.credito,
+      vuelto: datos.vuelto,
       lineas: carrito.map((l) => ({
         idProducto: l.producto.id,
         descripcion: l.producto.descripcion ?? '',
@@ -195,10 +224,16 @@ export function VentasPage({
       })),
     };
     try {
-      const { idLocal } = await window.posAPI.ventas.registrar(venta);
+      await window.posAPI.ventas.registrar(venta);
+    } catch (e) {
+      setError((e as Error).message);
+      return;
+    }
+
+    if (datos.modo === 'directo') {
       try {
         await window.posAPI.impresora.imprimirTicket('192.168.1.100', 9100, {
-          empresa: 'Mi Negocio',
+          empresa: empresaNombre,
           lineas: carrito.map((l) => ({
             descripcion: l.producto.descripcion ?? '',
             cantidad: l.cantidad,
@@ -210,18 +245,36 @@ export function VentasPage({
       } catch {
         /* impresora opcional */
       }
-      setMsg(`Venta ${numeroDeDoc} registrada (local #${idLocal}).`);
-      setCarrito([]);
-      setSel(null);
-      buscarRef.current?.focus();
-    } catch (e) {
-      setError((e as Error).message);
+      setMostrarCobro(false);
+      setMsg(`Venta ${docActual} cobrada.`);
+    } else {
+      // Guardar y ver en pantalla: mostramos la vista del ticket.
+      const nombreCli =
+        clientes.find((c) => c.idCliente === datos.idCliente)?.nombre ?? 'GENERICO';
+      setTicketData({
+        empresa: empresaNombre,
+        numeroDoc: docActual,
+        cajero: usuario?.nombres ?? usuario?.login ?? '',
+        cliente: nombreCli,
+        fecha: new Date().toLocaleString(),
+        total,
+        lineas: carrito.map((l) => ({
+          descripcion: l.producto.descripcion ?? '',
+          cantidad: l.cantidad,
+          precio: l.precioUnitario,
+        })),
+      });
+      setMostrarCobro(false);
     }
-  }, [carrito, idCaja, idUsuario, total]);
+    setCarrito([]);
+    setSel(null);
+    buscarRef.current?.focus();
+  }
 
   // Atajos de teclado F1 (lectora), F2 (teclado), F3 (cobrar).
   useEffect(() => {
     function onKey(e: KeyboardEvent): void {
+      if (mostrarCobro || ticketData) return; // el modal maneja sus atajos
       if (e.key === 'F1') {
         e.preventDefault();
         setModo('lectora');
@@ -230,12 +283,12 @@ export function VentasPage({
         setModo('teclado');
       } else if (e.key === 'F3') {
         e.preventDefault();
-        void cobrar();
+        cobrar();
       }
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [cobrar]);
+  }, [cobrar, mostrarCobro, ticketData]);
 
   const credito = (): void => setMsg('Gestión de créditos: próximamente.');
 
@@ -349,6 +402,19 @@ export function VentasPage({
           <button onClick={() => setOscuro((o) => !o)}>{oscuro ? '☀ Tema Claro' : '🌙 Tema Oscuro'}</button>
         </span>
       </div>
+
+      {mostrarCobro && (
+        <CobroModal
+          total={total}
+          numeroDoc={docActual}
+          clientes={clientes}
+          onCancelar={() => setMostrarCobro(false)}
+          onConfirmar={(d) => void confirmarCobro(d)}
+        />
+      )}
+      {ticketData && (
+        <TicketPreview data={ticketData} onNueva={() => setTicketData(null)} />
+      )}
     </div>
   );
 }

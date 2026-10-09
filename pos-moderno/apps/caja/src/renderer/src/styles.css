@@ -901,3 +901,229 @@ a.btn {
   background: #0f172a;
   color: #fff;
 }
+
+/* ===== Modal de cobro ===== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+.cobro {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr 1fr;
+  width: min(1100px, 95vw);
+  background: #0b2a66;
+  color: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.cobro__x {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 18px;
+  cursor: pointer;
+}
+.cobro__left {
+  background: #0a3a86;
+  padding: 24px;
+}
+.cobro__total {
+  font-size: 56px;
+  font-weight: 800;
+}
+.cobro__pagos {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.cobro__pagos label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+  cursor: pointer;
+}
+.cobro__pagos label.on input {
+  outline: 2px solid #22d3ee;
+}
+.cobro__pagos input {
+  flex: 1;
+  background: #0b2a66;
+  border: none;
+  border-bottom: 2px solid #38bdf8;
+  color: #fff;
+  font-size: 20px;
+  padding: 6px 8px;
+  text-align: right;
+}
+.cobro__vuelto {
+  margin-top: 28px;
+  font-size: 28px;
+}
+.cobro__rest {
+  color: #cbd5e1;
+}
+.cobro__keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  padding: 24px;
+  align-content: center;
+}
+.cobro__keypad button {
+  background: #1f2937;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 18px 0;
+  font-size: 22px;
+  cursor: pointer;
+}
+.cobro__keypad button:last-child {
+  grid-column: span 1;
+  font-size: 15px;
+}
+.cobro__right {
+  background: #0b2a66;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.cobro__imp {
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.cobro__imp select {
+  padding: 8px;
+  border-radius: 4px;
+}
+.cobro__directo {
+  background: #84cc16;
+  color: #15310a;
+  border: none;
+  border-radius: 999px;
+  padding: 16px;
+  font-size: 18px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.cobro__pantalla {
+  background: #38bdf8;
+  color: #06283b;
+  border: none;
+  border-radius: 999px;
+  padding: 14px;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.cobro__directo:disabled,
+.cobro__pantalla:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.cobro__doc {
+  display: flex;
+  gap: 8px;
+}
+.cobro__doc button {
+  flex: 1;
+  background: #334155;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.cobro__doc button.on {
+  background: #2563eb;
+}
+.cobro__cli {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+}
+.cobro__cli select {
+  padding: 8px;
+  border-radius: 4px;
+}
+.cobro__ticket {
+  margin-top: auto;
+  text-align: right;
+  font-weight: 700;
+}
+
+/* ===== Vista de ticket ===== */
+.tkprev {
+  position: relative;
+  background: #fff;
+  color: #111;
+  border-radius: 8px;
+  width: min(1000px, 95vw);
+  padding: 20px;
+}
+.tkprev .cobro__x { color: #111; }
+.tkprev__cols {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 20px;
+}
+.tkprev__ticket {
+  border-right: 1px dashed #cbd5e1;
+  padding-right: 16px;
+  font-size: 13px;
+}
+.tkprev__tbl {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.tkprev__tbl th,
+.tkprev__tbl td {
+  text-align: left;
+  padding: 2px 0;
+}
+.tkprev__tbl .num { text-align: right; }
+.tkprev__ok {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: #334155;
+}
+.tkprev__icon {
+  font-size: 60px;
+  margin: 16px 0;
+}
+.tkprev__btns {
+  display: flex;
+  gap: 12px;
+}
+
+@media print {
+  body * { visibility: hidden; }
+  #ticket-print, #ticket-print * { visibility: visible; }
+  #ticket-print {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 300px;
+    border: none;
+  }
+}
