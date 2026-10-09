@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import {
   dispositivosTerminal,
   guardarTerminal,
+  modoTerminal,
   obtenerTerminal,
   type TerminalConfig,
 } from '../api';
@@ -58,6 +59,16 @@ export function TerminalMPView(): JSX.Element {
     }
   }
 
+  async function ponerModoPDV(id: string): Promise<void> {
+    setError(null);
+    try {
+      await modoTerminal(id, 'PDV');
+      setMsg(`Terminal ${id} puesta en modo integrado (PDV).`);
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  }
+
   return (
     <main className="page" style={{ maxWidth: 620 }}>
       <h2>Terminal — Mercado Pago</h2>
@@ -97,13 +108,16 @@ export function TerminalMPView(): JSX.Element {
 
       {devices.length > 0 && (
         <table className="tabla" style={{ marginTop: 12 }}>
-          <thead><tr><th>Dispositivo</th><th>ID</th></tr></thead>
+          <thead><tr><th>Dispositivo</th><th>ID</th><th></th></tr></thead>
           <tbody>
             {devices.map((d) => (
               <tr key={d.id}>
                 <td>{d.name}</td>
                 <td>
-                  <button onClick={() => setDeviceId(d.id)}>{d.id}</button>
+                  <button onClick={() => setDeviceId(d.id)}>Usar {d.id}</button>
+                </td>
+                <td>
+                  <button onClick={() => void ponerModoPDV(d.id)}>Modo integrado (PDV)</button>
                 </td>
               </tr>
             ))}

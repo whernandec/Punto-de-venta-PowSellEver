@@ -88,10 +88,14 @@ export default function TerminalPage(): JSX.Element {
 
       {devices.length > 0 && (
         <table style={{ marginTop: 12 }}>
-          <thead><tr><th>Dispositivo</th><th>ID</th></tr></thead>
+          <thead><tr><th>Dispositivo</th><th>ID</th><th></th></tr></thead>
           <tbody>
             {devices.map((d) => (
-              <tr key={d.id}><td>{d.name}</td><td><button className="btn btn--ghost" onClick={() => setDeviceId(d.id)}>{d.id}</button></td></tr>
+              <tr key={d.id}>
+                <td>{d.name}</td>
+                <td><button className="btn btn--ghost" onClick={() => setDeviceId(d.id)}>Usar {d.id}</button></td>
+                <td><button className="btn btn--ghost" onClick={() => { void api.modoTerminal(d.id, 'PDV').then(() => setMsg('Terminal en modo PDV')).catch((e: Error) => setError(e.message)); }}>Modo PDV</button></td>
+              </tr>
             ))}
           </tbody>
         </table>

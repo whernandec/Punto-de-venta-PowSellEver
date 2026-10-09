@@ -5,6 +5,7 @@ import {
   Get,
   Injectable,
   Module,
+  Param,
   Post,
   Put,
 } from '@nestjs/common';
@@ -32,6 +33,11 @@ export class GuardarTerminalDto {
 
 export class PagoTerminalDto {
   @IsNumber() @Min(0.01) monto!: number;
+}
+
+export class ModoTerminalDto {
+  @IsString() deviceId!: string;
+  @IsString() modo!: 'PDV' | 'STANDALONE';
 }
 
 const delay = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
@@ -95,24 +101,33 @@ export class TerminalService {
     return (data.devices ?? []).map((d) => ({ id: d.id, name: d.name ?? d.id }));
   }
 
-  /** Cobra un monto en la terminal. Devuelve el estado final. */
-  async pagar(monto: number) {
+  /** Pone el dispositivo en modo integrado (PDV) o autónomo (STANDALONE). */
+  async modoDispositivo(deviceId: string, modo: 'PDV' | 'STANDALONE') {
+    const c = await this.getConfig();
+    if (c.simulacion || !c.accessToken) return { ok: true, simulado: true, modo };
+    const res = await fetch(`${MP_BASE}/devices/${deviceId}`, {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${c.accessToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ operating_mode: modo }),
+    });
+    if (!res.ok) {
+      const j = (await res.json().catch(() => ({}))) as { message?: string };
+      throw new BadRequestException(j.message ?? 'No se pudo cambiar el modo del dispositivo');
+    }
+    return { ok: true, modo };
+  }
+
+  /** Inicia un cobro en la terminal (no bloquea): crea el intent y devuelve su id. */
+  async iniciarPago(monto: number) {
     const c = await this.getConfig();
     if (!c.enabled) throw new BadRequestException('La terminal no está habilitada');
-
-    if (c.simulacion) {
-      await delay(800); // simula la interacción con el cliente
-      return { status: 'approved', id: `SIM-${Date.now()}`, simulado: true };
-    }
-
+    if (c.simulacion) return { intentId: `SIM-${Date.now()}`, simulado: true };
     if (!c.accessToken || !c.deviceId) {
       throw new BadRequestException('Falta access token o dispositivo configurado');
     }
-
-    const auth = { Authorization: `Bearer ${c.accessToken}` };
     const crear = await fetch(`${MP_BASE}/devices/${c.deviceId}/payment-intents`, {
       method: 'POST',
-      headers: { ...auth, 'Content-Type': 'application/json' },
+      headers: { Authorization: `Bearer ${c.accessToken}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         amount: Math.round(monto * 100),
         additional_info: { print_on_terminal: true, external_reference: `POS-${Date.now()}` },
@@ -122,18 +137,36 @@ export class TerminalService {
     if (!crear.ok || !intent.id) {
       throw new BadRequestException(intent.message ?? 'No se pudo crear el cobro');
     }
+    return { intentId: intent.id };
+  }
 
-    // Poll del estado hasta ~80s.
-    for (let i = 0; i < 40; i++) {
-      await delay(2000);
-      const s = await fetch(`${MP_BASE}/payment-intents/${intent.id}`, { headers: auth });
-      const sj = (await s.json()) as { state?: string };
-      if (sj.state === 'FINISHED') return { status: 'approved', id: intent.id };
-      if (['CANCELED', 'ERROR', 'REFUNDED'].includes(sj.state ?? '')) {
-        return { status: 'rejected', id: intent.id, estado: sj.state };
-      }
-    }
-    return { status: 'timeout', id: intent.id };
+  /** Consulta el estado de un cobro: pending | approved | rejected | canceled. */
+  async estadoPago(intentId: string) {
+    if (intentId.startsWith('SIM-')) return { status: 'approved', simulado: true };
+    const c = await this.getConfig();
+    if (!c.accessToken) throw new BadRequestException('Falta access token');
+    const s = await fetch(`${MP_BASE}/payment-intents/${intentId}`, {
+      headers: { Authorization: `Bearer ${c.accessToken}` },
+    });
+    const sj = (await s.json()) as { state?: string };
+    const estado = sj.state ?? '';
+    let status: 'pending' | 'approved' | 'rejected' | 'canceled' = 'pending';
+    if (estado === 'FINISHED') status = 'approved';
+    else if (estado === 'CANCELED') status = 'canceled';
+    else if (['ERROR', 'REFUNDED'].includes(estado)) status = 'rejected';
+    return { status, estado };
+  }
+
+  /** Cancela un cobro en curso. */
+  async cancelarPago(intentId: string) {
+    if (intentId.startsWith('SIM-')) return { status: 'canceled', simulado: true };
+    const c = await this.getConfig();
+    if (!c.accessToken || !c.deviceId) throw new BadRequestException('Config incompleta');
+    const res = await fetch(`${MP_BASE}/devices/${c.deviceId}/payment-intents/${intentId}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${c.accessToken}` },
+    });
+    return { status: res.ok ? 'canceled' : 'error' };
   }
 }
 
@@ -150,8 +183,17 @@ export class TerminalController {
   @Get('dispositivos') dispositivos() {
     return this.srv.dispositivos();
   }
-  @Post('pago') pagar(@Body() dto: PagoTerminalDto) {
-    return this.srv.pagar(dto.monto);
+  @Post('modo') modo(@Body() dto: ModoTerminalDto) {
+    return this.srv.modoDispositivo(dto.deviceId, dto.modo);
+  }
+  @Post('pago') iniciarPago(@Body() dto: PagoTerminalDto) {
+    return this.srv.iniciarPago(dto.monto);
+  }
+  @Get('pago/:id') estadoPago(@Param('id') id: string) {
+    return this.srv.estadoPago(id);
+  }
+  @Post('pago/:id/cancelar') cancelarPago(@Param('id') id: string) {
+    return this.srv.cancelarPago(id);
   }
 }
 

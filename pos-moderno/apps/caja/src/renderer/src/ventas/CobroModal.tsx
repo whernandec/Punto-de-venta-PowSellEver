@@ -1,6 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { ClienteDTO } from '@pos/types';
-import { obtenerTerminal, pagarTerminal } from '../api';
+import {
+  cancelarPagoTerminal,
+  estadoPagoTerminal,
+  iniciarPagoTerminal,
+  obtenerTerminal,
+} from '../api';
 
 export interface DatosCobro {
   modo: 'directo' | 'pantalla';
@@ -32,11 +37,16 @@ export function CobroModal({ total, numeroDoc, clientes, onCancelar, onConfirmar
   const [terminalOn, setTerminalOn] = useState(false);
   const [terminalMsg, setTerminalMsg] = useState<string | null>(null);
   const [procesandoTerminal, setProcesandoTerminal] = useState(false);
+  const intentRef = useRef<string | null>(null);
+  const pollRef = useRef<number | null>(null);
 
   useEffect(() => {
     obtenerTerminal()
       .then((c) => setTerminalOn(c.enabled))
       .catch(() => setTerminalOn(false));
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
   }, []);
 
   const pagado = (Number(efectivo) || 0) + (Number(tarjeta) || 0) + (Number(credito) || 0);
@@ -52,23 +62,56 @@ export function CobroModal({ total, numeroDoc, clientes, onCancelar, onConfirmar
   const tecla = (d: string): void =>
     set(d === ',' ? (valor().includes('.') ? valor() : valor() + '.') : (valor() === '0' ? d : valor() + d));
 
+  function detenerPoll(): void {
+    if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+    setProcesandoTerminal(false);
+  }
+
   async function cobrarConTerminal(): Promise<void> {
     const monto = restante > 0 ? restante : total;
     setProcesandoTerminal(true);
-    setTerminalMsg('Esperando pago en la terminal…');
+    setTerminalMsg('Enviando cobro a la terminal…');
     try {
-      const r = await pagarTerminal(monto);
-      if (r.status === 'approved') {
-        setTarjeta(((Number(tarjeta) || 0) + monto).toFixed(2));
-        setTerminalMsg(`✔ Terminal aprobada${r.simulado ? ' (simulada)' : ''}.`);
-      } else {
-        setTerminalMsg(`Terminal: ${r.status}${r.estado ? ` (${r.estado})` : ''}`);
-      }
+      const { intentId } = await iniciarPagoTerminal(monto);
+      intentRef.current = intentId;
+      setTerminalMsg('💳 Esperando que el cliente pague en la terminal…');
+      pollRef.current = window.setInterval(async () => {
+        try {
+          const r = await estadoPagoTerminal(intentId);
+          if (r.status === 'approved') {
+            detenerPoll();
+            setTarjeta(((Number(tarjeta) || 0) + monto).toFixed(2));
+            setTerminalMsg(`✔ Pago aprobado en terminal${r.simulado ? ' (simulado)' : ''}.`);
+            intentRef.current = null;
+          } else if (r.status === 'canceled' || r.status === 'rejected') {
+            detenerPoll();
+            setTerminalMsg(`Terminal: pago ${r.status}.`);
+            intentRef.current = null;
+          }
+        } catch {
+          /* reintentar en el siguiente tick */
+        }
+      }, 1500);
     } catch (e) {
+      detenerPoll();
       setTerminalMsg((e as Error).message);
-    } finally {
-      setProcesandoTerminal(false);
     }
+  }
+
+  async function cancelarTerminal(): Promise<void> {
+    if (intentRef.current) {
+      try {
+        await cancelarPagoTerminal(intentRef.current);
+      } catch {
+        /* ignorar */
+      }
+    }
+    detenerPoll();
+    intentRef.current = null;
+    setTerminalMsg('Cobro con terminal cancelado.');
   }
 
   function confirmar(modo: 'directo' | 'pantalla'): void {
@@ -152,13 +195,18 @@ export function CobroModal({ total, numeroDoc, clientes, onCancelar, onConfirmar
           <button className="cobro__pantalla" disabled={restante > 0} onClick={() => confirmar('pantalla')}>
             Guardar y ver en Pantalla (F1)
           </button>
-          {terminalOn && (
+          {terminalOn && !procesandoTerminal && (
             <button
               className="cobro__terminal"
-              disabled={procesandoTerminal || restante <= 0}
+              disabled={restante <= 0}
               onClick={() => void cobrarConTerminal()}
             >
-              {procesandoTerminal ? '⏳ Esperando terminal…' : '💳 Cobrar con Terminal MP'}
+              💳 Cobrar con Terminal MP
+            </button>
+          )}
+          {terminalOn && procesandoTerminal && (
+            <button className="cobro__cancelar" onClick={() => void cancelarTerminal()}>
+              ✕ Cancelar cobro en terminal
             </button>
           )}
           {terminalMsg && <div className="cobro__tmsg">{terminalMsg}</div>}

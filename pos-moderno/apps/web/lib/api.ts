@@ -130,6 +130,8 @@ export const api = {
   terminal: () => get<Record<string, unknown>>('/terminal'),
   guardarTerminal: (dto: Record<string, unknown>) => send('PUT', '/terminal', dto),
   dispositivosTerminal: () => get<Array<{ id: string; name: string }>>('/terminal/dispositivos'),
+  modoTerminal: (deviceId: string, modo: 'PDV' | 'STANDALONE') =>
+    post('/terminal/modo', { deviceId, modo }),
   reporteVentas: (desde: string, hasta: string) =>
     get<ReporteVentas>(`/reportes/ventas?desde=${desde}&hasta=${hasta}`),
   descargarReporteExcel: (desde: string, hasta: string) =>

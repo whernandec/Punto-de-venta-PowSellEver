@@ -298,11 +298,14 @@ export const guardarTerminal = (dto: Record<string, unknown>) =>
   send<TerminalConfig>('PUT', '/terminal', dto);
 export const dispositivosTerminal = () =>
   get<Array<{ id: string; name: string }>>('/terminal/dispositivos');
-export const pagarTerminal = (monto: number) =>
-  post<{ status: string; id: string; simulado?: boolean; estado?: string }>(
-    '/terminal/pago',
-    { monto },
-  );
+export const modoTerminal = (deviceId: string, modo: 'PDV' | 'STANDALONE') =>
+  post<{ ok: boolean; simulado?: boolean }>('/terminal/modo', { deviceId, modo });
+export const iniciarPagoTerminal = (monto: number) =>
+  post<{ intentId: string; simulado?: boolean }>('/terminal/pago', { monto });
+export const estadoPagoTerminal = (id: string) =>
+  get<{ status: string; estado?: string; simulado?: boolean }>(`/terminal/pago/${id}`);
+export const cancelarPagoTerminal = (id: string) =>
+  post<{ status: string }>(`/terminal/pago/${id}/cancelar`, {});
 
 async function descargarArchivo(ruta: string, nombre: string): Promise<void> {
   const res = await fetch(`${API_BASE}${ruta}`, { headers: { ...authHeader() } });
