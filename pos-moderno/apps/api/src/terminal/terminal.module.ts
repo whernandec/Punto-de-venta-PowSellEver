@@ -193,15 +193,36 @@ export class TerminalService {
 
   async dispositivos() {
     const c = await this.getConfig();
-    if (c.simulacion || !c.accessToken) {
-      return [{ id: 'SIM-DEVICE-1', name: 'Terminal simulada' }];
+    if (c.simulacion || !c.accessToken || c.accessToken.startsWith('SIM-')) {
+      return [{ id: 'SIM-DEVICE-1', name: 'Terminal simulada', operating_mode: 'PDV' }];
     }
     const res = await fetch(`${MP_BASE}/devices`, {
       headers: { Authorization: `Bearer ${c.accessToken}` },
     });
-    const data = (await res.json()) as { devices?: Array<{ id: string; name?: string }> };
-    if (!res.ok) throw new BadRequestException('No se pudieron listar los dispositivos');
-    return (data.devices ?? []).map((d) => ({ id: d.id, name: d.name ?? d.id }));
+    const data = (await res.json()) as {
+      devices?: Array<{ id: string; operating_mode?: string }>;
+      message?: string;
+    };
+    if (!res.ok) {
+      throw new BadRequestException(
+        data.message ?? 'No se pudieron listar los dispositivos (¿token válido?)',
+      );
+    }
+    return (data.devices ?? []).map((d) => ({
+      id: d.id,
+      name: d.id,
+      operating_mode: d.operating_mode ?? '',
+    }));
+  }
+
+  /** Valida que el deviceId sea real (no simulado) para operaciones reales. */
+  private validarDeviceReal(c: MpConfig): void {
+    if (!c.deviceId || c.deviceId.startsWith('SIM-')) {
+      throw new BadRequestException(
+        'El Device ID configurado es simulado o está vacío. En Configurar → Terminales ' +
+          'desactiva “simulación”, pulsa “Probar dispositivos” y elige tu terminal real.',
+      );
+    }
   }
 
   /** Pone el dispositivo en modo integrado (PDV) o autónomo (STANDALONE). */
@@ -225,9 +246,8 @@ export class TerminalService {
     const c = await this.getConfig();
     if (!c.enabled) throw new BadRequestException('La terminal no está habilitada');
     if (c.simulacion) return { intentId: `SIM-${Date.now()}`, simulado: true };
-    if (!c.accessToken || !c.deviceId) {
-      throw new BadRequestException('Falta access token o dispositivo configurado');
-    }
+    if (!c.accessToken) throw new BadRequestException('Falta access token');
+    this.validarDeviceReal(c);
     const crear = await fetch(`${MP_BASE}/devices/${c.deviceId}/payment-intents`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${c.accessToken}`, 'Content-Type': 'application/json' },

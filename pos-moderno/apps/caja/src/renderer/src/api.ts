@@ -302,7 +302,9 @@ export const urlOauthTerminal = (): string => `${API_BASE}/terminal/oauth/start`
 export const guardarTerminal = (dto: Record<string, unknown>) =>
   send<TerminalConfig>('PUT', '/terminal', dto);
 export const dispositivosTerminal = () =>
-  get<Array<{ id: string; name: string }>>('/terminal/dispositivos');
+  get<Array<{ id: string; name: string; operating_mode?: string }>>(
+    '/terminal/dispositivos',
+  );
 export const modoTerminal = (deviceId: string, modo: 'PDV' | 'STANDALONE') =>
   post<{ ok: boolean; simulado?: boolean }>('/terminal/modo', { deviceId, modo });
 export const iniciarPagoTerminal = (monto: number) =>

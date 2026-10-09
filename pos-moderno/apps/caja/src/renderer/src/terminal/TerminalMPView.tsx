@@ -16,7 +16,9 @@ export function TerminalMPView(): JSX.Element {
   const [storeId, setStoreId] = useState('');
   const [enabled, setEnabled] = useState(false);
   const [simulacion, setSimulacion] = useState(true);
-  const [devices, setDevices] = useState<Array<{ id: string; name: string }>>([]);
+  const [devices, setDevices] = useState<
+    Array<{ id: string; name: string; operating_mode?: string }>
+  >([]);
   const [error, setError] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
 
@@ -192,16 +194,17 @@ export function TerminalMPView(): JSX.Element {
 
       {devices.length > 0 && (
         <table className="tabla" style={{ marginTop: 12 }}>
-          <thead><tr><th>Dispositivo</th><th>ID</th><th></th></tr></thead>
+          <thead><tr><th>ID del dispositivo</th><th>Modo</th><th></th><th></th></tr></thead>
           <tbody>
             {devices.map((d) => (
               <tr key={d.id}>
-                <td>{d.name}</td>
+                <td>{d.id}{deviceId === d.id ? ' ✓' : ''}</td>
+                <td>{d.operating_mode || '—'}</td>
                 <td>
-                  <button onClick={() => setDeviceId(d.id)}>Usar {d.id}</button>
+                  <button onClick={() => setDeviceId(d.id)}>Usar</button>
                 </td>
                 <td>
-                  <button onClick={() => void ponerModoPDV(d.id)}>Modo integrado (PDV)</button>
+                  <button onClick={() => void ponerModoPDV(d.id)}>Poner en PDV</button>
                 </td>
               </tr>
             ))}
