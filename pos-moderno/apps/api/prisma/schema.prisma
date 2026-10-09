@@ -339,6 +339,14 @@ model Usuario {
   @@map("USUARIO2")
 }
 
+// Configuración genérica clave/valor (Fase 4). Ej: terminal Mercado Pago (JSON).
+model AppConfig {
+  clave String  @id @map("clave") @db.VarChar(100)
+  valor String? @map("valor") @db.VarChar(Max)
+
+  @@map("AppConfig")
+}
+
 model Venta {
   idVenta        Int       @id @default(autoincrement()) @map("idventa")
   idClienteV     Int?      @map("idclientev")

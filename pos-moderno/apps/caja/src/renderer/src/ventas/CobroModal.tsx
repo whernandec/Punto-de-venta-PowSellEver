@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { ClienteDTO } from '@pos/types';
+import { obtenerTerminal, pagarTerminal } from '../api';
 
 export interface DatosCobro {
   modo: 'directo' | 'pantalla';
@@ -28,6 +29,15 @@ export function CobroModal({ total, numeroDoc, clientes, onCancelar, onConfirmar
   const [campo, setCampo] = useState<Campo>('efectivo');
   const [idCliente, setIdCliente] = useState<number | ''>('');
   const [tipoDoc, setTipoDoc] = useState<'BOLETA' | 'FACTURA'>('BOLETA');
+  const [terminalOn, setTerminalOn] = useState(false);
+  const [terminalMsg, setTerminalMsg] = useState<string | null>(null);
+  const [procesandoTerminal, setProcesandoTerminal] = useState(false);
+
+  useEffect(() => {
+    obtenerTerminal()
+      .then((c) => setTerminalOn(c.enabled))
+      .catch(() => setTerminalOn(false));
+  }, []);
 
   const pagado = (Number(efectivo) || 0) + (Number(tarjeta) || 0) + (Number(credito) || 0);
   const vuelto = Math.max(0, pagado - total);
@@ -41,6 +51,25 @@ export function CobroModal({ total, numeroDoc, clientes, onCancelar, onConfirmar
   const valor = (): string => (campo === 'efectivo' ? efectivo : campo === 'tarjeta' ? tarjeta : credito);
   const tecla = (d: string): void =>
     set(d === ',' ? (valor().includes('.') ? valor() : valor() + '.') : (valor() === '0' ? d : valor() + d));
+
+  async function cobrarConTerminal(): Promise<void> {
+    const monto = restante > 0 ? restante : total;
+    setProcesandoTerminal(true);
+    setTerminalMsg('Esperando pago en la terminal…');
+    try {
+      const r = await pagarTerminal(monto);
+      if (r.status === 'approved') {
+        setTarjeta(((Number(tarjeta) || 0) + monto).toFixed(2));
+        setTerminalMsg(`✔ Terminal aprobada${r.simulado ? ' (simulada)' : ''}.`);
+      } else {
+        setTerminalMsg(`Terminal: ${r.status}${r.estado ? ` (${r.estado})` : ''}`);
+      }
+    } catch (e) {
+      setTerminalMsg((e as Error).message);
+    } finally {
+      setProcesandoTerminal(false);
+    }
+  }
 
   function confirmar(modo: 'directo' | 'pantalla'): void {
     onConfirmar({
@@ -123,6 +152,16 @@ export function CobroModal({ total, numeroDoc, clientes, onCancelar, onConfirmar
           <button className="cobro__pantalla" disabled={restante > 0} onClick={() => confirmar('pantalla')}>
             Guardar y ver en Pantalla (F1)
           </button>
+          {terminalOn && (
+            <button
+              className="cobro__terminal"
+              disabled={procesandoTerminal || restante <= 0}
+              onClick={() => void cobrarConTerminal()}
+            >
+              {procesandoTerminal ? '⏳ Esperando terminal…' : '💳 Cobrar con Terminal MP'}
+            </button>
+          )}
+          {terminalMsg && <div className="cobro__tmsg">{terminalMsg}</div>}
           <div className="cobro__doc">
             <button className={tipoDoc === 'BOLETA' ? 'on' : ''} onClick={() => setTipoDoc('BOLETA')}>BOLETA</button>
             <button className={tipoDoc === 'FACTURA' ? 'on' : ''} onClick={() => setTipoDoc('FACTURA')}>FACTURA</button>

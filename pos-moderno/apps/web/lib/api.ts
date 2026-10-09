@@ -127,6 +127,9 @@ export const api = {
   login: (dto: LoginDTO) =>
     post<UsuarioAutenticadoDTO>('/auth/login', dto),
   dashboard: () => get<DashboardData>('/dashboard'),
+  terminal: () => get<Record<string, unknown>>('/terminal'),
+  guardarTerminal: (dto: Record<string, unknown>) => send('PUT', '/terminal', dto),
+  dispositivosTerminal: () => get<Array<{ id: string; name: string }>>('/terminal/dispositivos'),
   reporteVentas: (desde: string, hasta: string) =>
     get<ReporteVentas>(`/reportes/ventas?desde=${desde}&hasta=${hasta}`),
   descargarReporteExcel: (desde: string, hasta: string) =>

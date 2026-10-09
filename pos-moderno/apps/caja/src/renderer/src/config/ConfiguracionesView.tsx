@@ -37,6 +37,10 @@ const GRUPOS: Grupo[] = [
     items: [{ k: 'correo', label: 'Notificaciones por Correo Electronico', icon: '✉️' }],
   },
   {
+    titulo: 'Terminales',
+    items: [{ k: 'terminalmp', label: 'Mercado Pago', icon: '💳' }],
+  },
+  {
     titulo: 'Mantenimiento',
     items: [{ k: 'respaldo', label: 'Respaldo de Base de datos', icon: '🗄️' }],
   },

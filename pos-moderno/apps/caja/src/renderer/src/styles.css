@@ -1127,3 +1127,20 @@ a.btn {
     border: none;
   }
 }
+.cobro__terminal {
+  background: #00b1ea;
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 14px;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.cobro__terminal:disabled { opacity: 0.5; cursor: not-allowed; }
+.cobro__tmsg {
+  background: #0a3a86;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 13px;
+}

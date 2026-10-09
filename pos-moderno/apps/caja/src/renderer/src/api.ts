@@ -284,6 +284,26 @@ export interface DashboardData {
 }
 export const obtenerDashboard = () => get<DashboardData>('/dashboard');
 
+// ---- Terminal (Mercado Pago) ----
+export interface TerminalConfig {
+  proveedor: string;
+  enabled: boolean;
+  simulacion: boolean;
+  deviceId: string;
+  storeId: string;
+  tokenConfigurado: boolean;
+}
+export const obtenerTerminal = () => get<TerminalConfig>('/terminal');
+export const guardarTerminal = (dto: Record<string, unknown>) =>
+  send<TerminalConfig>('PUT', '/terminal', dto);
+export const dispositivosTerminal = () =>
+  get<Array<{ id: string; name: string }>>('/terminal/dispositivos');
+export const pagarTerminal = (monto: number) =>
+  post<{ status: string; id: string; simulado?: boolean; estado?: string }>(
+    '/terminal/pago',
+    { monto },
+  );
+
 async function descargarArchivo(ruta: string, nombre: string): Promise<void> {
   const res = await fetch(`${API_BASE}${ruta}`, { headers: { ...authHeader() } });
   if (!res.ok) throw new Error(`Error HTTP ${res.status}`);

@@ -94,6 +94,7 @@ export function AuthGate({
           <Link href="/comprobantes">Comprobantes</Link>
           <Link href="/ticket">Ticket</Link>
           <Link href="/correo">Correo</Link>
+          <Link href="/terminal">Terminal</Link>
           <Link href="/empresa">Empresa</Link>
         </nav>
         <div className="sidebar__user">

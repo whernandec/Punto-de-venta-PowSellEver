@@ -22,6 +22,7 @@ import { TicketModule } from './ticket/ticket.module';
 import { CorreoModule } from './correo/correo.module';
 import { GruposModule } from './grupos/grupos.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { TerminalModule } from './terminal/terminal.module';
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
     CorreoModule,
     GruposModule,
     DashboardModule,
+    TerminalModule,
   ],
   controllers: [HealthController],
   providers: [

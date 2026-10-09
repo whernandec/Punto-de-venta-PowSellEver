@@ -11,6 +11,7 @@ import { ComprasView } from './compras/ComprasView';
 import { CobrosView } from './cobros/CobrosView';
 import { MovimientosView } from './finanzas/MovimientosView';
 import { ReportesView } from './reportes/ReportesView';
+import { TerminalMPView } from './terminal/TerminalMPView';
 
 interface Ctx {
   idCaja: number;
@@ -41,6 +42,7 @@ export const MODULOS: Record<
   impresoras: { label: 'Impresoras', comp: () => <Placeholder titulo="Impresoras" /> },
   balanza: { label: 'Balanza', comp: () => <Placeholder titulo="Balanza" /> },
   correo: { label: 'Notificaciones por Correo', comp: () => <CorreoView /> },
+  terminalmp: { label: 'Terminal Mercado Pago', comp: () => <TerminalMPView /> },
   respaldo: { label: 'Respaldo de Base de datos', comp: () => <Placeholder titulo="Respaldo de Base de datos" /> },
   // Operativos (se abren desde el POS):
   inventario: { label: 'Inventario', comp: (c) => <InventarioView idCaja={c.idCaja} idUsuario={c.idUsuario} /> },
