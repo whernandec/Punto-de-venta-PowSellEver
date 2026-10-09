@@ -21,6 +21,7 @@ import { SerializacionModule } from './serializacion/serializacion.module';
 import { TicketModule } from './ticket/ticket.module';
 import { CorreoModule } from './correo/correo.module';
 import { GruposModule } from './grupos/grupos.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { GruposModule } from './grupos/grupos.module';
     TicketModule,
     CorreoModule,
     GruposModule,
+    DashboardModule,
   ],
   controllers: [HealthController],
   providers: [

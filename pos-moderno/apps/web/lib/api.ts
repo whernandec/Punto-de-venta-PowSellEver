@@ -105,9 +105,28 @@ async function descargarArchivo(ruta: string, nombre: string): Promise<void> {
   URL.revokeObjectURL(url);
 }
 
+export interface DashboardData {
+  mes: string;
+  kpis: {
+    cuentasPorCobrar: number;
+    cuentasPorPagar: number;
+    ganancia: number;
+    stockBajo: number;
+    numClientes: number;
+    numProductos: number;
+  };
+  totalVentas: number;
+  totalGanancia: number;
+  ventasPorMes: Array<{ mes: string; total: number }>;
+  topProductos: Array<{ producto: string; cantidad: number }>;
+  gastosPorConcepto: Array<{ concepto: string; total: number }>;
+  gastosPorMes: Array<{ mes: string; total: number }>;
+}
+
 export const api = {
   login: (dto: LoginDTO) =>
     post<UsuarioAutenticadoDTO>('/auth/login', dto),
+  dashboard: () => get<DashboardData>('/dashboard'),
   reporteVentas: (desde: string, hasta: string) =>
     get<ReporteVentas>(`/reportes/ventas?desde=${desde}&hasta=${hasta}`),
   descargarReporteExcel: (desde: string, hasta: string) =>
