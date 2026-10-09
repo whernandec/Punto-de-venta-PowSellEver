@@ -52,6 +52,8 @@ const TABS: Array<{ key: Tab; label: string }> = [
 interface Props {
   idCaja: number;
   usuario: UsuarioAutenticadoDTO;
+  tabInicial?: string;
+  onInicio?: () => void;
 }
 
 /**
@@ -59,13 +61,13 @@ interface Props {
  * - Sin turno → formulario de apertura (saldo inicial).
  * - Con turno → ventas + botón de cierre.
  */
-export function CajaGate({ idCaja, usuario }: Props): JSX.Element {
+export function CajaGate({ idCaja, usuario, tabInicial, onInicio }: Props): JSX.Element {
   const [turno, setTurno] = useState<TurnoAbiertoDTO | null>(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saldoInicial, setSaldoInicial] = useState('0');
   const [cierreInfo, setCierreInfo] = useState<string | null>(null);
-  const [tab, setTab] = useState<Tab>('ventas');
+  const [tab, setTab] = useState<Tab>((tabInicial as Tab) ?? 'ventas');
 
   const refrescar = useCallback(() => {
     setCargando(true);
@@ -126,6 +128,11 @@ export function CajaGate({ idCaja, usuario }: Props): JSX.Element {
     return (
       <div className="apertura">
         <div className="apertura__card">
+          {onInicio && (
+            <button className="btn btn--ghost" onClick={onInicio} style={{ marginBottom: 8 }}>
+              ⌂ Volver al Dashboard
+            </button>
+          )}
           <h2>Abrir caja {idCaja}</h2>
           {cierreInfo && <p className="alert alert--ok">{cierreInfo}</p>}
           {error && <p className="alert alert--error">{error}</p>}
@@ -152,7 +159,10 @@ export function CajaGate({ idCaja, usuario }: Props): JSX.Element {
           Turno abierto · Caja {turno.idCaja} · Saldo inicial{' '}
           {turno.saldoInicial.toFixed(2)}
         </span>
-        <button onClick={cerrar}>Cerrar caja</button>
+        <span style={{ display: 'flex', gap: 8 }}>
+          {onInicio && <button onClick={onInicio}>⌂ Dashboard</button>}
+          <button onClick={cerrar}>Cerrar caja</button>
+        </span>
       </div>
 
       <nav className="tabs">

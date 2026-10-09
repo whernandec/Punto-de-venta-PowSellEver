@@ -265,6 +265,25 @@ export interface ReporteVentasResp {
 export const reporteVentas = (desde: string, hasta: string) =>
   get<ReporteVentasResp>(`/reportes/ventas?desde=${desde}&hasta=${hasta}`);
 
+export interface DashboardData {
+  mes: string;
+  kpis: {
+    cuentasPorCobrar: number;
+    cuentasPorPagar: number;
+    ganancia: number;
+    stockBajo: number;
+    numClientes: number;
+    numProductos: number;
+  };
+  totalVentas: number;
+  totalGanancia: number;
+  ventasPorMes: Array<{ mes: string; total: number }>;
+  topProductos: Array<{ producto: string; cantidad: number }>;
+  gastosPorConcepto: Array<{ concepto: string; total: number }>;
+  gastosPorMes: Array<{ mes: string; total: number }>;
+}
+export const obtenerDashboard = () => get<DashboardData>('/dashboard');
+
 async function descargarArchivo(ruta: string, nombre: string): Promise<void> {
   const res = await fetch(`${API_BASE}${ruta}`, { headers: { ...authHeader() } });
   if (!res.ok) throw new Error(`Error HTTP ${res.status}`);
