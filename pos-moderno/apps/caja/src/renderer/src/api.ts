@@ -292,8 +292,13 @@ export interface TerminalConfig {
   deviceId: string;
   storeId: string;
   tokenConfigurado: boolean;
+  conectado: boolean;
+  cuenta: string;
 }
 export const obtenerTerminal = () => get<TerminalConfig>('/terminal');
+export const desvincularTerminal = () =>
+  post<TerminalConfig>('/terminal/desvincular', {});
+export const urlOauthTerminal = (): string => `${API_BASE}/terminal/oauth/start`;
 export const guardarTerminal = (dto: Record<string, unknown>) =>
   send<TerminalConfig>('PUT', '/terminal', dto);
 export const dispositivosTerminal = () =>

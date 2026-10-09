@@ -8,17 +8,27 @@ import {
   Param,
   Post,
   Put,
+  Query,
+  Res,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { IsNumber, IsOptional, IsString, Min } from 'class-validator';
 import { PrismaService } from '../prisma/prisma.service';
+import { Public } from '../common/public.decorator';
 
 const CLAVE = 'mercadopago';
 const MP_BASE = 'https://api.mercadopago.com/point/integration-api';
+const MP_AUTH = process.env.MP_AUTH_DOMAIN ?? 'https://auth.mercadopago.com';
+const MP_REDIRECT =
+  process.env.MP_REDIRECT_URI ?? 'http://localhost:3000/terminal/oauth/callback';
 
 interface MpConfig {
   enabled: boolean;
   simulacion: boolean;
   accessToken?: string;
+  refreshToken?: string;
+  userId?: string;
+  conectado?: boolean;
   deviceId?: string;
   storeId?: string;
 }
@@ -71,7 +81,100 @@ export class TerminalService {
       deviceId: c.deviceId ?? '',
       storeId: c.storeId ?? '',
       tokenConfigurado: !!c.accessToken,
+      conectado: !!c.conectado || !!c.accessToken,
+      cuenta: c.userId ?? '',
     };
+  }
+
+  /** URL de autorización OAuth de Mercado Pago (o simulada). */
+  async urlOauth(): Promise<string> {
+    const clientId = process.env.MP_CLIENT_ID;
+    const secret = process.env.MP_CLIENT_SECRET;
+    // Sin credenciales de vendedor → flujo simulado.
+    if (!clientId || !secret) {
+      return `${MP_REDIRECT}?code=SIM&state=sim`;
+    }
+    const state = Math.random().toString(36).slice(2);
+    const params = new URLSearchParams({
+      client_id: clientId,
+      response_type: 'code',
+      platform_id: 'mp',
+      redirect_uri: MP_REDIRECT,
+      state,
+    });
+    return `${MP_AUTH}/authorization?${params.toString()}`;
+  }
+
+  /** Intercambia el code por el token y lo guarda. Devuelve HTML. */
+  async oauthCallback(code: string): Promise<string> {
+    const c = await this.getConfig();
+    const clientId = process.env.MP_CLIENT_ID;
+    const secret = process.env.MP_CLIENT_SECRET;
+
+    if (!code) return this.htmlResultado(false, 'Falta el código de autorización.');
+
+    if (code === 'SIM' || !clientId || !secret) {
+      await this.setConfig({
+        ...c,
+        accessToken: c.accessToken ?? 'SIM-OAUTH-TOKEN',
+        conectado: true,
+        userId: c.userId ?? 'cuenta-simulada',
+      });
+      return this.htmlResultado(true, 'Cuenta de Mercado Pago conectada (simulación).');
+    }
+
+    const res = await fetch('https://api.mercadopago.com/oauth/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        client_id: clientId,
+        client_secret: secret,
+        code,
+        grant_type: 'authorization_code',
+        redirect_uri: MP_REDIRECT,
+      }),
+    });
+    const j = (await res.json()) as {
+      access_token?: string;
+      refresh_token?: string;
+      user_id?: number;
+      message?: string;
+    };
+    if (!res.ok || !j.access_token) {
+      return this.htmlResultado(false, j.message ?? 'No se pudo conectar la cuenta.');
+    }
+    await this.setConfig({
+      ...c,
+      accessToken: j.access_token,
+      refreshToken: j.refresh_token,
+      userId: j.user_id ? String(j.user_id) : undefined,
+      conectado: true,
+    });
+    return this.htmlResultado(true, 'Cuenta de Mercado Pago conectada correctamente.');
+  }
+
+  async desvincular() {
+    const c = await this.getConfig();
+    await this.setConfig({
+      ...c,
+      accessToken: undefined,
+      refreshToken: undefined,
+      userId: undefined,
+      conectado: false,
+    });
+    return this.obtener();
+  }
+
+  private htmlResultado(ok: boolean, msg: string): string {
+    const color = ok ? '#16a34a' : '#dc2626';
+    const icon = ok ? '✅' : '⚠️';
+    return `<!doctype html><html><head><meta charset="utf-8"><title>Mercado Pago</title></head>
+      <body style="font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#f1f5f9">
+      <div style="text-align:center;background:#fff;padding:40px;border-radius:12px;box-shadow:0 6px 24px rgba(0,0,0,.1)">
+      <div style="font-size:48px">${icon}</div>
+      <h2 style="color:${color}">${msg}</h2>
+      <p>Ya puede cerrar esta ventana y volver al sistema.</p>
+      </div></body></html>`;
   }
 
   async guardar(dto: GuardarTerminalDto) {
@@ -179,6 +282,26 @@ export class TerminalController {
   }
   @Put() guardar(@Body() dto: GuardarTerminalDto) {
     return this.srv.guardar(dto);
+  }
+  @Post('desvincular') desvincular() {
+    return this.srv.desvincular();
+  }
+
+  // --- OAuth (abiertas en el navegador; sin JWT) ---
+  @Public()
+  @Get('oauth/start')
+  async oauthStart(@Res() res: Response): Promise<void> {
+    res.redirect(await this.srv.urlOauth());
+  }
+
+  @Public()
+  @Get('oauth/callback')
+  async oauthCallback(
+    @Res() res: Response,
+    @Query('code') code?: string,
+  ): Promise<void> {
+    const html = await this.srv.oauthCallback(code ?? '');
+    res.set('Content-Type', 'text/html').send(html);
   }
   @Get('dispositivos') dispositivos() {
     return this.srv.dispositivos();

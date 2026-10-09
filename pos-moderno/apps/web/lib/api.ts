@@ -132,6 +132,8 @@ export const api = {
   dispositivosTerminal: () => get<Array<{ id: string; name: string }>>('/terminal/dispositivos'),
   modoTerminal: (deviceId: string, modo: 'PDV' | 'STANDALONE') =>
     post('/terminal/modo', { deviceId, modo }),
+  desvincularTerminal: () => post('/terminal/desvincular', {}),
+  urlOauthTerminal: () => `${API_BASE}/terminal/oauth/start`,
   reporteVentas: (desde: string, hasta: string) =>
     get<ReporteVentas>(`/reportes/ventas?desde=${desde}&hasta=${hasta}`),
   descargarReporteExcel: (desde: string, hasta: string) =>

@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import {
+  desvincularTerminal,
   dispositivosTerminal,
   guardarTerminal,
   modoTerminal,
   obtenerTerminal,
+  urlOauthTerminal,
   type TerminalConfig,
 } from '../api';
 
@@ -59,6 +61,36 @@ export function TerminalMPView(): JSX.Element {
     }
   }
 
+  function conectar(): void {
+    window.open(urlOauthTerminal(), '_blank');
+    setMsg('Se abrió Mercado Pago en el navegador. Autoriza y vuelve aquí…');
+    let n = 0;
+    const id = window.setInterval(async () => {
+      n++;
+      try {
+        const c = await obtenerTerminal();
+        if (c.conectado) {
+          setCfg(c);
+          setMsg('✔ Cuenta de Mercado Pago conectada.');
+          clearInterval(id);
+        }
+      } catch {
+        /* reintentar */
+      }
+      if (n > 40) clearInterval(id);
+    }, 2000);
+  }
+
+  async function desconectar(): Promise<void> {
+    try {
+      const c = await desvincularTerminal();
+      setCfg(c);
+      setMsg('Cuenta desvinculada.');
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  }
+
   async function ponerModoPDV(id: string): Promise<void> {
     setError(null);
     try {
@@ -105,6 +137,26 @@ export function TerminalMPView(): JSX.Element {
           <a href="https://www.mercadopago.com/developers/es/docs/mp-point/landing" target="_blank" rel="noreferrer">📄 Documentación Mercado Pago Point ↗</a>
           <a href="https://www.mercadopago.com/developers/panel/app" target="_blank" rel="noreferrer">🔑 Obtener Access Token ↗</a>
         </div>
+      </div>
+
+      <div className="panel" style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+        {cfg?.conectado ? (
+          <>
+            <span style={{ color: '#16a34a', fontWeight: 700 }}>
+              ✔ Cuenta conectada {cfg.cuenta ? `(${cfg.cuenta})` : ''}
+            </span>
+            <button className="btn btn--ghost" type="button" onClick={() => void desconectar()}>
+              Desvincular
+            </button>
+          </>
+        ) : (
+          <>
+            <button className="btn btn--primary" type="button" onClick={conectar} style={{ background: '#00b1ea' }}>
+              🔗 Conectar con Mercado Pago
+            </button>
+            <span className="muted">Vincula tu cuenta sin pegar el token a mano.</span>
+          </>
+        )}
       </div>
 
       <form className="panel" onSubmit={guardar}>

@@ -11,10 +11,12 @@ export default function TerminalPage(): JSX.Element {
   const [enabled, setEnabled] = useState(false);
   const [simulacion, setSimulacion] = useState(true);
   const [devices, setDevices] = useState<Array<{ id: string; name: string }>>([]);
+  const [conectado, setConectado] = useState(false);
+  const [cuenta, setCuenta] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
 
-  useEffect(() => {
+  function cargar(): void {
     api
       .terminal()
       .then((c) => {
@@ -23,9 +25,29 @@ export default function TerminalPage(): JSX.Element {
         setDeviceId(String(c.deviceId ?? ''));
         setStoreId(String(c.storeId ?? ''));
         setTokenConfigurado(Boolean(c.tokenConfigurado));
+        setConectado(Boolean(c.conectado));
+        setCuenta(String(c.cuenta ?? ''));
       })
       .catch((e: Error) => setError(e.message));
-  }, []);
+  }
+  useEffect(cargar, []);
+
+  function conectar(): void {
+    window.open(api.urlOauthTerminal(), '_blank');
+    setMsg('Autoriza en Mercado Pago y vuelve aquí…');
+    let n = 0;
+    const id = window.setInterval(() => {
+      n++;
+      api.terminal().then((c) => {
+        if (c.conectado) { cargar(); setMsg('✔ Cuenta conectada.'); clearInterval(id); }
+      }).catch(() => undefined);
+      if (n > 40) clearInterval(id);
+    }, 2000);
+  }
+  async function desconectar(): Promise<void> {
+    try { await api.desvincularTerminal(); cargar(); setMsg('Cuenta desvinculada.'); }
+    catch (e) { setError((e as Error).message); }
+  }
 
   async function guardar(e: React.FormEvent): Promise<void> {
     e.preventDefault();
@@ -76,6 +98,17 @@ export default function TerminalPage(): JSX.Element {
           <a href="https://www.mercadopago.com/developers/es/docs/mp-point/landing" target="_blank" rel="noreferrer">📄 Documentación Point ↗</a>
           <a href="https://www.mercadopago.com/developers/panel/app" target="_blank" rel="noreferrer">🔑 Obtener Access Token ↗</a>
         </div>
+      </div>
+
+      <div className="panel" style={{ display: 'flex', alignItems: 'center', gap: 16, maxWidth: 560 }}>
+        {conectado ? (
+          <>
+            <span style={{ color: '#16a34a', fontWeight: 700 }}>✔ Cuenta conectada {cuenta ? `(${cuenta})` : ''}</span>
+            <button className="btn btn--ghost" type="button" onClick={() => void desconectar()}>Desvincular</button>
+          </>
+        ) : (
+          <button className="btn" type="button" onClick={conectar} style={{ background: '#00b1ea' }}>🔗 Conectar con Mercado Pago</button>
+        )}
       </div>
 
       <form className="panel" onSubmit={guardar} style={{ maxWidth: 560 }}>
