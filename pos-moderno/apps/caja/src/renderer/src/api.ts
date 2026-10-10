@@ -26,7 +26,14 @@ import type {
  * Cliente de la API del POS. La URL base se podrá configurar por caja;
  * por ahora apunta al servidor NestJS local (Fase 0).
  */
-export const API_BASE = 'http://localhost:3000';
+// La URL de la API se resuelve desde la config (local embebida o servidor remoto).
+export const API_BASE: string = (() => {
+  try {
+    return window.posAPI?.config?.apiUrl?.() ?? 'http://localhost:3000';
+  } catch {
+    return 'http://localhost:3000';
+  }
+})();
 
 // JWT de la sesión (se fija tras el login).
 let authToken: string | null = null;

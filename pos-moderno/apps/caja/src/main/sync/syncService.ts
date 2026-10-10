@@ -15,7 +15,10 @@ import type {
 } from '@pos/types';
 import { getDb } from '../db/local';
 
-const API_BASE = process.env.POS_API_URL ?? 'http://localhost:3000';
+let API_BASE = process.env.POS_API_URL ?? 'http://localhost:3000';
+export function setApiBase(url: string): void {
+  if (url) API_BASE = url;
+}
 const MAX_INTENTOS = 10;
 
 // JWT fijado desde el renderer al iniciar sesión (necesario para POST /ventas).
