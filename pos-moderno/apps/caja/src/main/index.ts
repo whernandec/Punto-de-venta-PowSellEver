@@ -1,15 +1,25 @@
 import { app, BrowserWindow, ipcMain, shell } from 'electron';
 import { join } from 'path';
 import type { RegistrarVentaDTO } from '@pos/types';
+import { cargarConfig } from './config';
+import { detenerApiEmbebida, iniciarApiEmbebida } from './apiEmbebida';
 import { balanzaDisponible, leerPeso } from './hardware/balanza';
 import { imprimirPorRed, type DatosTicket } from './hardware/impresora';
 import {
   iniciarSyncAutomatico,
   listarPendientes,
   registrarVentaLocal,
+  setApiBase,
   setAuthToken,
   sincronizar,
 } from './sync/syncService';
+
+const config = cargarConfig();
+setApiBase(config.apiUrl);
+// El renderer obtiene la URL de la API de forma síncrona al arrancar.
+ipcMain.on('config:get', (e) => {
+  e.returnValue = { apiUrl: config.apiUrl };
+});
 
 function createWindow(): void {
   const win = new BrowserWindow({
@@ -70,6 +80,7 @@ ipcMain.handle('ventas:pendientes', () => listarPendientes());
 ipcMain.handle('ventas:sincronizar', () => sincronizar());
 
 app.whenReady().then(() => {
+  iniciarApiEmbebida(config); // modo local empaquetado: levanta la API embebida
   createWindow();
   iniciarSyncAutomatico(); // reintenta enviar ventas pendientes periódicamente
   app.on('activate', () => {
@@ -79,4 +90,8 @@ app.whenReady().then(() => {
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
+});
+
+app.on('before-quit', () => {
+  detenerApiEmbebida();
 });

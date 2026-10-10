@@ -24,6 +24,11 @@ const posAPI = {
     ): Promise<void> =>
       ipcRenderer.invoke('impresora:imprimirTicket', ip, puerto, datos),
   },
+  config: {
+    apiUrl: (): string =>
+      (ipcRenderer.sendSync('config:get') as { apiUrl: string })?.apiUrl ??
+      'http://localhost:3000',
+  },
   auth: {
     setToken: (token: string | null): Promise<void> =>
       ipcRenderer.invoke('auth:setToken', token),

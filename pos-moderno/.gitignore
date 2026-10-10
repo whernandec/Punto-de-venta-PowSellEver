@@ -26,6 +26,7 @@ prisma/*.db
 # Electron
 apps/caja/release/
 apps/caja/dist-electron/
+apps/caja/build-api/
 
 # OS
 .DS_Store
