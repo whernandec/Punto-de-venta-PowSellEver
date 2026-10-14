@@ -205,6 +205,102 @@ Login (`admin`/`1234`) → Abrir caja → Agregar producto → **Cobrar e imprim
 **7. Probar OFFLINE (lo más importante del POS):**
 Con la app abierta, **detén la API** (Ctrl-C) y haz una venta: queda guardada y el contador "Pendientes" sube. Vuelve a levantar la API y pulsa **Sincronizar ahora** (o espera 30 s): el contador baja a 0 y la venta aparece en SQL Server.
 
+## Instalación en Windows (instalador .exe)
+
+La caja se distribuye como un instalador **NSIS** (`PSE-Caja-Setup-<version>.exe`).
+Un mismo ejecutable funciona en dos modos (editable en `config.json`, ver abajo):
+
+- **local** (por defecto): la app **lleva la API NestJS embebida** y la levanta
+  sola usando el Node que trae Electron (no hace falta instalar Node). Ideal para
+  el equipo que tiene al lado el SQL Server.
+- **servidor**: la app no levanta nada; solo consume una API ya desplegada en la
+  red (`apiUrl`). Ideal para cajas secundarias que apuntan al servidor central.
+
+### 1. Base de datos — SQL Server Express
+
+Los datos viven en **SQL Server** (igual que el sistema WinForms original). En el
+equipo servidor:
+
+1. Instala **SQL Server 2022 Express** (gratis) y, opcional, **SSMS** (SQL Server
+   Management Studio) para administrarlo.
+2. Durante la instalación habilita **autenticación mixta** (SQL + Windows) y define
+   la contraseña del usuario `sa`. En *SQL Server Configuration Manager* habilita
+   **TCP/IP** y deja el puerto **1433** (reinicia el servicio al terminar).
+3. Crea la base y carga el esquema + procedimientos almacenados y la tabla nueva de
+   configuración. Desde `cmd` (ajusta `-S` al nombre de tu instancia, p. ej.
+   `localhost\SQLEXPRESS`):
+
+   ```bat
+   sqlcmd -S localhost\SQLEXPRESS -U sa -P TU_PASSWORD -Q "CREATE DATABASE BASEADACURSO"
+   sqlcmd -S localhost\SQLEXPRESS -U sa -P TU_PASSWORD -d BASEADACURSO -i script.sql
+   sqlcmd -S localhost\SQLEXPRESS -U sa -P TU_PASSWORD -d BASEADACURSO -i pos-moderno\db\appconfig.sql
+   ```
+
+   - `script.sql` (raíz del repo) = tablas + los 178 procedimientos almacenados.
+   - `appconfig.sql` = tabla `AppConfig` (clave/valor) que usa el POS moderno.
+   - Si ya tienes datos, restaura tu `.bak` en su lugar y solo corre `appconfig.sql`.
+
+### 2. Generar el instalador (.exe)
+
+> El `.exe` **debe compilarse en Windows**: incluye módulos nativos
+> (`better-sqlite3`, `serialport`) y el *query engine* de Prisma, específicos del SO.
+> No se puede generar desde macOS/Linux.
+
+- **Automático (recomendado):** el workflow `.github/workflows/build-caja-win.yml`
+  compila en `windows-latest` y publica el instalador como artefacto. Dispáralo
+  manualmente (*Actions → Build instalador PSE Caja (Windows) → Run workflow*) o
+  empujando un tag `vX.Y.Z`. Descarga el `.exe` desde *Artifacts*.
+- **Manual en un Windows:**
+
+  ```bat
+  cd pos-moderno
+  npm ci
+  npm run build -w @pos/types
+  npm run build -w @pos/api
+  npm run prisma:generate -w @pos/api
+  cd apps\caja
+  npm run dist:win
+  ```
+
+  El instalador queda en `pos-moderno\apps\caja\release\`. El paso `dist:win`
+  ejecuta `scripts/empaquetar-api.mjs`, que arma una copia **autónoma** de la API
+  (con su propio `node_modules` de producción y el cliente de Prisma) y la empaqueta
+  en `resources\api\` dentro de la app.
+
+### 3. Instalar y configurar en el equipo
+
+1. Ejecuta `PSE-Caja-Setup-<version>.exe` y sigue el asistente (crea acceso directo
+   "PSE Caja").
+2. Abre la app una vez; se crea el archivo de configuración en:
+
+   ```
+   %APPDATA%\PSE Caja\config.json
+   ```
+
+3. Edita ese `config.json` según el modo del equipo y reinicia la app:
+
+   ```jsonc
+   // Equipo con la API embebida + SQL local
+   {
+     "modo": "local",
+     "apiUrl": "http://localhost:3000",
+     "puerto": 3000,
+     "databaseUrl": "sqlserver://localhost:1433;database=BASEADACURSO;user=sa;password=TU_PASSWORD;encrypt=true;trustServerCertificate=true",
+     "jwtSecret": "pon-un-secreto-largo-y-unico"
+   }
+   ```
+
+   ```jsonc
+   // Caja secundaria que apunta al servidor central
+   {
+     "modo": "servidor",
+     "apiUrl": "http://IP-DEL-SERVIDOR:3000"
+   }
+   ```
+
+   > `jwtSecret` debe ser **el mismo** en todos los equipos que comparten la API.
+   > No subas contraseñas reales al repositorio.
+
 ## Estado
 
 - [x] Fase 0: monorepo + API + esquema Prisma (24 tablas) + slice Productos
@@ -232,4 +328,8 @@ Con la app abierta, **detén la API** (Ctrl-C) y haz una venta: queda guardada y
 - [x] Reportes **PDF server-side** (pdfkit) además de Excel
 - [x] Comprobantes (series), **Ticket** (plantilla impresa) y **Correo** (config + envío
       de reportes PDF por email con nodemailer). Disponibles en web y en la caja.
+- [x] **Instalador Windows**: `.exe` NSIS con **API embebida** (modo local/servidor
+      por `config.json`), empaquetado autónomo de la API (`scripts/empaquetar-api.mjs`)
+      y **CI en Windows** (`.github/workflows/build-caja-win.yml`). Datos en SQL Server
+      Express (ver "Instalación en Windows").
 - [ ] Fase 4 (resto): migrar SPs restantes, pruebas automatizadas

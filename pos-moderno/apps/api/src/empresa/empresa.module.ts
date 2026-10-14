@@ -20,6 +20,7 @@ export class ActualizarEmpresaDto {
   @IsOptional() @IsString() trabajasConImpuestos?: string;
   @IsOptional() @IsString() modoDeBusqueda?: string;
   @IsOptional() @IsString() correoParaReportes?: string;
+  @IsOptional() @IsString() carpetaParaCopias?: string;
   @IsOptional() @IsString() pais?: string;
 }
 
@@ -32,6 +33,7 @@ const SELECT = {
   trabajasConImpuestos: true,
   modoDeBusqueda: true,
   correoParaReportes: true,
+  carpetaParaCopias: true,
   pais: true,
 } as const;
 
@@ -59,6 +61,7 @@ export class EmpresaService {
         trabajasConImpuestos: dto.trabajasConImpuestos ?? undefined,
         modoDeBusqueda: dto.modoDeBusqueda ?? undefined,
         correoParaReportes: dto.correoParaReportes ?? undefined,
+        carpetaParaCopias: dto.carpetaParaCopias ?? undefined,
         pais: dto.pais ?? undefined,
       },
       select: SELECT,

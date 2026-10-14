@@ -2,6 +2,7 @@ import type {
   AjusteInventarioDTO,
   AperturaCajaDTO,
   ArqueoDTO,
+  CajaPrincipalDTO,
   CierreCajaDTO,
   ClienteDTO,
   ConceptoDTO,
@@ -14,6 +15,8 @@ import type {
   EmpresaDTO,
   InventarioItemDTO,
   LoginDTO,
+  MovimientoKardexDTO,
+  VencimientoItemDTO,
   ProductoDTO,
   ProveedorDTO,
   RegistrarCompraDTO,
@@ -26,7 +29,14 @@ import type {
  * Cliente de la API del POS. La URL base se podrá configurar por caja;
  * por ahora apunta al servidor NestJS local (Fase 0).
  */
-export const API_BASE = 'http://localhost:3000';
+// La URL de la API se resuelve desde la config (local embebida o servidor remoto).
+export const API_BASE: string = (() => {
+  try {
+    return window.posAPI?.config?.apiUrl?.() ?? 'http://localhost:3000';
+  } catch {
+    return 'http://localhost:3000';
+  }
+})();
 
 // JWT de la sesión (se fija tras el login).
 let authToken: string | null = null;
@@ -115,6 +125,22 @@ export function inventarioBajoMinimo(): Promise<InventarioItemDTO[]> {
 
 export function ajusteInventario(dto: AjusteInventarioDTO): Promise<unknown> {
   return post('/inventario/ajuste', dto);
+}
+
+export function movimientosKardex(
+  idProducto: number,
+): Promise<MovimientoKardexDTO[]> {
+  return get<MovimientoKardexDTO[]>(`/inventario/${idProducto}/kardex`);
+}
+
+export function vencimientosInventario(
+  modo: 'por_vencer' | 'vencidos',
+  dias = 30,
+  q = '',
+): Promise<VencimientoItemDTO[]> {
+  return get<VencimientoItemDTO[]>(
+    `/inventario/vencimientos?modo=${modo}&dias=${dias}&q=${encodeURIComponent(q)}`,
+  );
 }
 
 // ---- Proveedores ----
@@ -219,9 +245,16 @@ export const crearIngreso = (dto: CrearIngresoDTO) => post('/ingresos', dto);
 // ---- Usuarios ----
 export const obtenerUsuarios = () => get<UsuarioDTO[]>('/usuarios');
 export const crearUsuario = (dto: CrearUsuarioDTO) => post('/usuarios', dto);
+export const actualizarUsuario = (id: number, dto: Partial<CrearUsuarioDTO>) =>
+  send('PATCH', `/usuarios/${id}`, dto);
 export const eliminarUsuario = (id: number) => send('DELETE', `/usuarios/${id}`);
 
 // ---- Empresa ----
+export const obtenerCajaPrincipal = () =>
+  get<CajaPrincipalDTO | null>('/caja/principal');
+export const actualizarCajaPrincipal = (descripcion: string) =>
+  send('PATCH', '/caja/principal', { descripcion });
+
 export const obtenerEmpresa = () => get<EmpresaDTO | null>('/empresa');
 export const actualizarEmpresa = (id: number, dto: Partial<EmpresaDTO>) =>
   send<EmpresaDTO>('PUT', `/empresa/${id}`, dto);

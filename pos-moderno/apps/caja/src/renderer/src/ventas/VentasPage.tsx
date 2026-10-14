@@ -5,7 +5,13 @@ import type {
   RegistrarVentaDTO,
   UsuarioAutenticadoDTO,
 } from '@pos/types';
-import { obtenerClientes, obtenerEmpresa, obtenerProductos } from '../api';
+import {
+  obtenerClientes,
+  obtenerEmpresa,
+  obtenerProductos,
+  obtenerTicket,
+} from '../api';
+import { numeroALetras, DISENO_DEFAULT } from '../ticket/comprobante';
 import { CobroModal, type DatosCobro } from './CobroModal';
 import { TicketPreview, type TicketData } from './TicketPreview';
 
@@ -232,15 +238,39 @@ export function VentasPage({
 
     if (datos.modo === 'directo') {
       try {
+        const cfg = ((await obtenerTicket().catch(() => ({}))) ?? {}) as Record<string, string>;
+        const txt = (k: string, def: string): string =>
+          typeof cfg[k] === 'string' && cfg[k].trim() ? cfg[k] : def;
+        const esFactura = cfg.formato === 'FACTURA' || datos.tipoDoc === 'FACTURA';
         await window.posAPI.impresora.imprimirTicket('192.168.1.100', 9100, {
           empresa: empresaNombre,
+          identificadorFiscal: txt('identificadorFiscal', DISENO_DEFAULT.identificadorFiscal),
+          direccion: txt('direccion', DISENO_DEFAULT.direccion),
+          provinciaDepartamentoPais: txt('provinciaDepartamentoPais', DISENO_DEFAULT.provinciaDepartamentoPais),
+          numeroDoc: docActual,
+          cajero: usuario?.nombres ?? usuario?.login ?? '',
+          cliente:
+            clientes.find((c) => c.idCliente === datos.idCliente)?.nombre ?? 'GENERICO',
+          fecha: new Date().toLocaleString(),
           lineas: carrito.map((l) => ({
             descripcion: l.producto.descripcion ?? '',
             cantidad: l.cantidad,
             precio: l.precioUnitario,
           })),
+          subtotal: total,
+          descuento: 0,
           total,
-          pie: '¡Gracias por su compra!',
+          son: numeroALetras(total),
+          nombreDeMoneda: txt('nombreDeMoneda', DISENO_DEFAULT.nombreDeMoneda),
+          efectivo: datos.efectivo,
+          vuelto: datos.vuelto,
+          tipoPago,
+          numProductos: carrito.reduce((s, l) => s + l.cantidad, 0),
+          agradecimiento: txt('agradecimiento', DISENO_DEFAULT.agradecimiento),
+          paginaWebFacebook: txt('paginaWebFacebook', DISENO_DEFAULT.paginaWebFacebook),
+          anuncio: txt('anuncio', DISENO_DEFAULT.anuncio),
+          datosFiscales: txt('datosFiscales', DISENO_DEFAULT.datosFiscales),
+          esFactura,
         });
       } catch {
         /* impresora opcional */
@@ -257,7 +287,13 @@ export function VentasPage({
         cajero: usuario?.nombres ?? usuario?.login ?? '',
         cliente: nombreCli,
         fecha: new Date().toLocaleString(),
+        subtotal: total,
+        descuento: 0,
         total,
+        efectivo: datos.efectivo,
+        vuelto: datos.vuelto,
+        tipoPago,
+        numProductos: carrito.reduce((s, l) => s + l.cantidad, 0),
         lineas: carrito.map((l) => ({
           descripcion: l.producto.descripcion ?? '',
           cantidad: l.cantidad,

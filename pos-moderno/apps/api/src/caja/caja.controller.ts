@@ -4,6 +4,7 @@ import {
   Get,
   Param,
   ParseIntPipe,
+  Patch,
   Post,
 } from '@nestjs/common';
 import { CajaService } from './caja.service';
@@ -12,6 +13,16 @@ import { AperturaCajaDto, CierreCajaDto } from './dto/caja.dto';
 @Controller('caja')
 export class CajaController {
   constructor(private readonly caja: CajaService) {}
+
+  @Get('principal')
+  principal() {
+    return this.caja.principal();
+  }
+
+  @Patch('principal')
+  actualizarPrincipal(@Body() dto: { descripcion: string }) {
+    return this.caja.actualizarPrincipal(dto.descripcion);
+  }
 
   @Post('apertura')
   abrir(@Body() dto: AperturaCajaDto) {

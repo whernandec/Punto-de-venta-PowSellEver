@@ -4,6 +4,7 @@ import { LoginView } from './auth/LoginView';
 import { CajaGate } from './caja/CajaGate';
 import { DashboardView } from './dashboard/DashboardView';
 import { ConfiguracionesView } from './config/ConfiguracionesView';
+import { SetupWizard } from './setup/SetupWizard';
 import { ModuloView } from './modulos';
 import { setToken } from './api';
 
@@ -20,6 +21,18 @@ export function App(): JSX.Element {
   const [usuario, setUsuario] = useState<UsuarioAutenticadoDTO | null>(null);
   const [vista, setVista] = useState<Vista>('caja');
   const [origenModulo, setOrigenModulo] = useState<Vista>('dashboard');
+  // Primera ejecución: si no está instalado, mostramos el asistente.
+  const [instalado, setInstalado] = useState<boolean>(() => {
+    try {
+      return window.posAPI?.config?.instalado?.() ?? true;
+    } catch {
+      return true;
+    }
+  });
+
+  if (!instalado) {
+    return <SetupWizard onFinish={() => setInstalado(true)} />;
+  }
 
   function alIniciarSesion(u: UsuarioAutenticadoDTO): void {
     setToken(u.token);
@@ -85,6 +98,13 @@ export function App(): JSX.Element {
       <header className="app__header">
         <h1>POS — Punto de Venta</h1>
         <span className="app__badge">
+          {usuario.foto ? (
+            <img className="app__avatar" src={usuario.foto} alt="" />
+          ) : (
+            <span className="app__avatar app__avatar--ini">
+              {(usuario.nombres ?? usuario.login ?? '?').trim().charAt(0).toUpperCase()}
+            </span>
+          )}
           {usuario.nombres ?? usuario.login} · {usuario.rol ?? 'sin rol'}
         </span>
         <button className="app__logout" onClick={salir}>Salir</button>

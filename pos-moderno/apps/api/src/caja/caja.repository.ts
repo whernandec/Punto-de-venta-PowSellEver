@@ -30,6 +30,21 @@ export class CajaRepository {
     return process.env.CAJA_NATIVO === 'true';
   }
 
+  /** Primera caja (la "principal") para editar su nombre desde Empresa. */
+  async principal(): Promise<{ idCaja: number; descripcion: string | null } | null> {
+    return this.prisma.caja.findFirst({
+      orderBy: { idCaja: 'asc' },
+      select: { idCaja: true, descripcion: true },
+    });
+  }
+
+  async actualizarDescripcion(id: number, descripcion: string): Promise<void> {
+    await this.prisma.caja.update({
+      where: { idCaja: id },
+      data: { descripcion },
+    });
+  }
+
   async abrir(dto: AperturaCajaDto): Promise<void> {
     const ahora = new Date();
     if (this.nativo) {

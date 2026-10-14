@@ -137,6 +137,8 @@ export interface UsuarioAutenticadoDTO {
   login: string | null;
   rol: string | null;
   correo: string | null;
+  /** Foto del usuario como data URL (base64), o null si no tiene. */
+  foto?: string | null;
   /** JWT para autorizar las siguientes llamadas a la API. */
   token: string;
 }
@@ -223,6 +225,7 @@ export interface InventarioItemDTO {
   stock: number | null;
   stockMinimo: number | null;
   importe: number | null;
+  categoria?: string | null;
 }
 
 export interface MovimientoKardexDTO {
@@ -232,9 +235,20 @@ export interface MovimientoKardexDTO {
   motivo: string | null;
   tipo: string | null;
   cantidad: number | null;
+  habia: number | null;
   hay: number | null;
   costoUnt: number | null;
   cajero: string | null;
+  categoria: string | null;
+}
+
+export interface VencimientoItemDTO {
+  idProducto: number;
+  codigo: string | null;
+  descripcion: string | null;
+  fechaVencimiento: string | null;
+  stock: number | null;
+  diasAVencer: number | null;
 }
 
 export interface AjusteInventarioDTO {
@@ -252,9 +266,12 @@ export interface UsuarioDTO {
   idUsuario: number;
   nombres: string | null;
   login: string | null;
+  password: string | null;
   correo: string | null;
   rol: string | null;
   estado: string | null;
+  /** Foto del usuario como data URL (base64), o null si no tiene. */
+  foto?: string | null;
 }
 
 export interface CrearUsuarioDTO {
@@ -263,6 +280,8 @@ export interface CrearUsuarioDTO {
   password: string;
   correo?: string;
   rol?: string;
+  /** Foto del usuario como data URL (base64). */
+  foto?: string;
 }
 
 export type ActualizarUsuarioDTO = Partial<CrearUsuarioDTO>;
@@ -278,7 +297,13 @@ export interface EmpresaDTO {
   trabajasConImpuestos: string | null;
   modoDeBusqueda: string | null;
   correoParaReportes: string | null;
+  carpetaParaCopias: string | null;
   pais: string | null;
+}
+
+export interface CajaPrincipalDTO {
+  idCaja: number;
+  descripcion: string | null;
 }
 
 export type ActualizarEmpresaDTO = Partial<Omit<EmpresaDTO, 'idEmpresa'>>;

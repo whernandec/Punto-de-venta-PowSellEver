@@ -32,14 +32,16 @@ export class InventarioRepository {
 
   inventario(filtro: string) {
     return this.prisma.$queryRawUnsafe(
-      `SELECT Id_Producto1 AS idProducto, Codigo AS codigo, Descripcion AS descripcion,
-              Precio_de_compra AS costo, Precio_de_venta AS precioVenta,
-              TRY_CAST(Stock AS numeric(18,2)) AS stock, Stock_minimo AS stockMinimo,
-              TRY_CAST(Precio_de_compra * TRY_CAST(Stock AS numeric(18,2)) AS numeric(18,2)) AS importe
-         FROM Producto1
-        WHERE Usa_inventarios = 'SI'
-          AND (Descripcion + ISNULL(Codigo,'')) LIKE '%' + @P1 + '%'
-        ORDER BY Descripcion`,
+      `SELECT p.Id_Producto1 AS idProducto, p.Codigo AS codigo, p.Descripcion AS descripcion,
+              p.Precio_de_compra AS costo, p.Precio_de_venta AS precioVenta,
+              TRY_CAST(p.Stock AS numeric(18,2)) AS stock, p.Stock_minimo AS stockMinimo,
+              TRY_CAST(p.Precio_de_compra * TRY_CAST(p.Stock AS numeric(18,2)) AS numeric(18,2)) AS importe,
+              g.Linea AS categoria
+         FROM Producto1 p
+         LEFT JOIN Grupo_de_Productos g ON g.Idline = p.Id_grupo
+        WHERE p.Usa_inventarios = 'SI'
+          AND (p.Descripcion + ISNULL(p.Codigo,'')) LIKE '%' + @P1 + '%'
+        ORDER BY p.Descripcion`,
       filtro,
     );
   }
@@ -59,15 +61,43 @@ export class InventarioRepository {
   movimientos(idProducto: number) {
     return this.prisma.$queryRawUnsafe(
       `SELECT TOP 200 k.Id_kardex AS idKardex, k.Fecha AS fecha, p.Descripcion AS descripcion,
-              k.Motivo AS motivo, k.Tipo AS tipo, k.Cantidad AS cantidad, k.Hay AS hay,
-              k.Costo_unt AS costoUnt, u.Nombres_y_Apellidos AS cajero
+              k.Motivo AS motivo, k.Tipo AS tipo, k.Cantidad AS cantidad,
+              k.Habia AS habia, k.Hay AS hay,
+              k.Costo_unt AS costoUnt, u.Nombres_y_Apellidos AS cajero, g.Linea AS categoria
          FROM KARDEX k
          INNER JOIN Producto1 p ON p.Id_Producto1 = k.Id_producto
          LEFT JOIN USUARIO2 u ON u.idUsuario = k.Id_usuario
+         LEFT JOIN Grupo_de_Productos g ON g.Idline = p.Id_grupo
         WHERE k.Id_producto = @P1
         ORDER BY k.Id_kardex DESC`,
       idProducto,
     );
+  }
+
+  /**
+   * Productos con fecha de vencimiento.
+   *  - modo 'por_vencer': vencen dentro de los próximos `dias` (incluye hoy).
+   *  - modo 'vencidos': ya vencieron (fecha < hoy).
+   * Solo productos que manejan inventario y con stock > 0.
+   */
+  vencimientos(modo: 'por_vencer' | 'vencidos', dias: number, filtro: string) {
+    const condFecha =
+      modo === 'vencidos'
+        ? `DATEDIFF(day, GETDATE(), TRY_CAST(p.Fecha_de_vencimiento AS date)) < 0`
+        : `DATEDIFF(day, GETDATE(), TRY_CAST(p.Fecha_de_vencimiento AS date)) BETWEEN 0 AND @P2`;
+    const sql = `SELECT p.Id_Producto1 AS idProducto, p.Codigo AS codigo, p.Descripcion AS descripcion,
+              CONVERT(varchar(10), TRY_CAST(p.Fecha_de_vencimiento AS date), 103) AS fechaVencimiento,
+              TRY_CAST(p.Stock AS numeric(18,2)) AS stock,
+              DATEDIFF(day, GETDATE(), TRY_CAST(p.Fecha_de_vencimiento AS date)) AS diasAVencer
+         FROM Producto1 p
+        WHERE p.Usa_inventarios = 'SI'
+          AND TRY_CAST(p.Fecha_de_vencimiento AS date) IS NOT NULL
+          AND TRY_CAST(p.Stock AS numeric(18,2)) > 0
+          AND ${condFecha}
+          AND (p.Descripcion + ISNULL(p.Codigo,'')) LIKE '%' + @P1 + '%'
+        ORDER BY diasAVencer ASC`;
+    const params = modo === 'vencidos' ? [filtro] : [filtro, dias];
+    return this.prisma.$queryRawUnsafe(sql, ...params);
   }
 
   async ajustar(dto: AjusteInventarioDto) {
@@ -87,21 +117,27 @@ export class InventarioRepository {
     });
   }
 
-  /** Implementación LEGACY: delega en los stored procedures. */
+  /**
+   * Implementación LEGACY: delega en los stored procedures.
+   * IMPORTANTE: los SP insertar_KARDEX_* calculan Habia/Hay leyendo el Stock
+   * ACTUAL y asumen que ya fue actualizado (Entrada: Habia = Stock − Cantidad;
+   * Salida: Habia = Stock + Cantidad). Por eso hay que actualizar el stock
+   * ANTES de insertar el movimiento, si no Habia/Hay quedan corridos por la cantidad.
+   */
   private async aplicarMovimientoSp(tx: Tx, dto: AjusteInventarioDto) {
     const fecha = new Date();
     if (dto.tipo === TipoMov.Entrada) {
+      await this.execSp(tx, 'aumentarStock', [dto.idProducto, dto.cantidad]);
       await this.execSp(tx, 'insertar_KARDEX_Entrada', [
         fecha, dto.motivo, dto.cantidad, dto.idProducto,
         dto.idUsuario, 'ENTRADA', 'Activo', dto.idCaja,
       ]);
-      await this.execSp(tx, 'aumentarStock', [dto.idProducto, dto.cantidad]);
     } else {
+      await this.execSp(tx, 'disminuir_stock', [dto.idProducto, dto.cantidad]);
       await this.execSp(tx, 'insertar_KARDEX_SALIDA', [
         fecha, dto.motivo, dto.cantidad, dto.idProducto,
         dto.idUsuario, 'SALIDA', 'Activo', dto.idCaja,
       ]);
-      await this.execSp(tx, 'disminuir_stock', [dto.idProducto, dto.cantidad]);
     }
   }
 
@@ -143,6 +179,16 @@ export class InventarioController {
   @Get('bajo-minimo')
   bajoMinimo() {
     return this.repo.bajoMinimo();
+  }
+
+  @Get('vencimientos')
+  vencimientos(
+    @Query('modo') modo?: string,
+    @Query('dias') dias?: string,
+    @Query('q') q?: string,
+  ) {
+    const m = modo === 'vencidos' ? 'vencidos' : 'por_vencer';
+    return this.repo.vencimientos(m, Number(dias) || 30, q ?? '');
   }
 
   @Get(':idProducto/kardex')

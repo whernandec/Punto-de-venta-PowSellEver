@@ -24,6 +24,30 @@ const posAPI = {
     ): Promise<void> =>
       ipcRenderer.invoke('impresora:imprimirTicket', ip, puerto, datos),
   },
+  config: {
+    apiUrl: (): string =>
+      (ipcRenderer.sendSync('config:get') as { apiUrl: string })?.apiUrl ??
+      'http://localhost:3000',
+    instalado: (): boolean =>
+      (ipcRenderer.sendSync('config:get') as { instalado: boolean })
+        ?.instalado === true,
+  },
+  setup: {
+    probar: (sql: unknown): Promise<{ ok: boolean; dbExiste?: boolean; error?: string }> =>
+      ipcRenderer.invoke('setup:probar', sql),
+    instalarPrincipal: (datos: unknown): Promise<{ ok: boolean }> =>
+      ipcRenderer.invoke('setup:instalarPrincipal', datos),
+    instalarSecundaria: (apiUrl: string): Promise<{ ok: boolean }> =>
+      ipcRenderer.invoke('setup:instalarSecundaria', apiUrl),
+    onProgreso: (
+      cb: (d: { etapa: string; hecho?: number; total?: number }) => void,
+    ): (() => void) => {
+      const h = (_e: unknown, d: { etapa: string; hecho?: number; total?: number }): void =>
+        cb(d);
+      ipcRenderer.on('setup:progreso', h);
+      return () => ipcRenderer.removeListener('setup:progreso', h);
+    },
+  },
   auth: {
     setToken: (token: string | null): Promise<void> =>
       ipcRenderer.invoke('auth:setToken', token),

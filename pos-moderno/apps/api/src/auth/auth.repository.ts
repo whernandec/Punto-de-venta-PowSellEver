@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { bufferAFoto } from '../common/foto';
 
 /** Usuario validado, normalizado (independiente de SP o nativo). */
 export interface UsuarioValidado {
@@ -8,6 +9,7 @@ export interface UsuarioValidado {
   login: string | null;
   rol: string | null;
   correo: string | null;
+  foto: string | null;
 }
 
 /** Fila cruda del SP validar_usuario (SELECT * FROM USUARIO2). */
@@ -46,6 +48,7 @@ export class AuthRepository {
             login: u.login,
             rol: u.rol,
             correo: u.correo,
+            foto: bufferAFoto(u.icono, u.nombreDeIcono),
           }
         : null;
     }
@@ -56,14 +59,19 @@ export class AuthRepository {
       login,
     );
     const u = filas[0];
-    return u
-      ? {
-          idUsuario: u.idUsuario,
-          nombres: u.Nombres_y_Apellidos,
-          login: u.Login,
-          rol: u.Rol,
-          correo: u.Correo,
-        }
-      : null;
+    if (!u) return null;
+    // El SP no devuelve la imagen; la leemos aparte para mostrar quién atiende.
+    const extra = await this.prisma.usuario.findUnique({
+      where: { idUsuario: u.idUsuario },
+      select: { icono: true, nombreDeIcono: true },
+    });
+    return {
+      idUsuario: u.idUsuario,
+      nombres: u.Nombres_y_Apellidos,
+      login: u.Login,
+      rol: u.Rol,
+      correo: u.Correo,
+      foto: bufferAFoto(extra?.icono, extra?.nombreDeIcono),
+    };
   }
 }

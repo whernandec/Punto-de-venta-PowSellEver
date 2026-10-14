@@ -107,9 +107,20 @@ export function CajaGate({ idCaja, usuario, onIr, onInicio }: Props): JSX.Elemen
   return (
     <>
       <div className="turno-bar">
-        <span>
-          Turno abierto · Caja {turno.idCaja} · Saldo inicial{' '}
-          {turno.saldoInicial.toFixed(2)}
+        <span className="turno-bar__info">
+          {usuario.foto ? (
+            <img className="atiende__avatar" src={usuario.foto} alt="" />
+          ) : (
+            <span className="atiende__avatar atiende__avatar--ini">
+              {(usuario.nombres ?? usuario.login ?? '?').trim().charAt(0).toUpperCase()}
+            </span>
+          )}
+          <span>
+            <strong>Atiende: {usuario.nombres ?? usuario.login}</strong>
+            <br />
+            Turno abierto · Caja {turno.idCaja} · Saldo inicial{' '}
+            {turno.saldoInicial.toFixed(2)}
+          </span>
         </span>
         <span style={{ display: 'flex', gap: 8 }}>
           {onInicio && <button onClick={onInicio}>⌂ Dashboard</button>}

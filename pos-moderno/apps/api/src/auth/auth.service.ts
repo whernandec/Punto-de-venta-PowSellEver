@@ -28,6 +28,7 @@ export class AuthService {
       login: u.login,
       rol: u.rol,
       correo: u.correo,
+      foto: u.foto,
       token,
     };
   }

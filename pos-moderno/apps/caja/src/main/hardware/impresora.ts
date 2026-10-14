@@ -12,9 +12,29 @@ export interface LineaTicket {
 
 export interface DatosTicket {
   empresa: string;
+  identificadorFiscal?: string;
+  direccion?: string;
+  provinciaDepartamentoPais?: string;
+  numeroDoc?: string;
+  cajero?: string;
+  cliente?: string;
+  fecha?: string;
   lineas: LineaTicket[];
+  subtotal?: number;
+  descuento?: number;
   total: number;
-  pie?: string;
+  son?: string; // total en letras
+  nombreDeMoneda?: string;
+  efectivo?: number;
+  vuelto?: number;
+  tipoPago?: string;
+  numProductos?: number;
+  agradecimiento?: string;
+  paginaWebFacebook?: string;
+  anuncio?: string;
+  datosFiscales?: string;
+  esFactura?: boolean;
+  pie?: string; // compat
 }
 
 // Comandos ESC/POS básicos.
@@ -26,19 +46,54 @@ const LEFT = `${ESC}a0`;
 const BOLD_ON = `${ESC}E1`;
 const BOLD_OFF = `${ESC}E0`;
 const CUT = `${GS}V1`;
+const ANCHO = 32;
+const SEP = '-'.repeat(ANCHO) + '\n';
 
-/** Construye el buffer ESC/POS de un ticket. */
-export function construirTicket(datos: DatosTicket): Buffer {
-  let out = INIT + CENTER + BOLD_ON + datos.empresa + '\n' + BOLD_OFF + LEFT;
-  out += '--------------------------------\n';
-  for (const l of datos.lineas) {
-    const sub = (l.cantidad * l.precio).toFixed(2);
-    out += `${l.cantidad} x ${l.descripcion}\n`;
-    out += `${' '.repeat(Math.max(0, 32 - sub.length))}${sub}\n`;
+/** Línea con etiqueta a la izquierda y valor a la derecha (ancho fijo). */
+function lr(izq: string, der: string): string {
+  const espacio = Math.max(1, ANCHO - izq.length - der.length);
+  return izq + ' '.repeat(espacio) + der + '\n';
+}
+
+/** Construye el buffer ESC/POS de un ticket a partir del diseño configurado. */
+export function construirTicket(d: DatosTicket): Buffer {
+  const sim = 'S/.';
+  let out = INIT + CENTER + BOLD_ON + d.empresa + '\n' + BOLD_OFF;
+  if (d.identificadorFiscal) out += d.identificadorFiscal + '\n';
+  if (d.direccion) out += d.direccion + '\n';
+  if (d.provinciaDepartamentoPais) out += d.provinciaDepartamentoPais + '\n';
+  out += LEFT;
+
+  const doc = d.esFactura ? 'FACTURA' : 'TICKET';
+  out += BOLD_ON + `${doc} : ${d.numeroDoc ?? ''}\n` + BOLD_OFF;
+  if (d.cajero) out += `Cajero: ${d.cajero}\n`;
+  if (d.fecha) out += `Fecha : ${d.fecha}\n`;
+  if (d.cliente) out += `Cliente: ${d.cliente}\n`;
+  out += SEP;
+
+  out += 'Cant Descripcion            Importe\n';
+  for (const l of d.lineas) {
+    out += `${l.descripcion}\n`;
+    out += lr(`  ${l.cantidad} x ${l.precio.toFixed(2)}`, `${sim} ${(l.cantidad * l.precio).toFixed(2)}`);
   }
-  out += '--------------------------------\n';
-  out += BOLD_ON + `TOTAL: ${datos.total.toFixed(2)}\n` + BOLD_OFF;
-  if (datos.pie) out += CENTER + '\n' + datos.pie + '\n';
+  out += SEP;
+
+  if (d.subtotal != null) out += lr('Sub Total:', `${sim} ${d.subtotal.toFixed(2)}`);
+  if (d.descuento != null) out += lr('Descuento:', `${sim} ${d.descuento.toFixed(2)}`);
+  out += BOLD_ON + lr('TOTAL:', `${sim} ${d.total.toFixed(2)}`) + BOLD_OFF;
+  if (d.son) out += `SON: ${d.son} ${d.nombreDeMoneda ?? ''}\n`;
+  if (d.efectivo != null) out += lr('EFECTIVO:', `${sim} ${d.efectivo.toFixed(2)}`);
+  if (d.vuelto != null) out += lr('VUELTO:', `${sim} ${d.vuelto.toFixed(2)}`);
+  if (d.tipoPago) out += lr('Tipo de Pago:', d.tipoPago);
+  if (d.numProductos != null) out += lr('Numero de Productos', String(d.numProductos));
+  out += SEP;
+
+  out += CENTER;
+  if (d.agradecimiento) out += d.agradecimiento + '\n';
+  if (d.paginaWebFacebook) out += d.paginaWebFacebook + '\n';
+  if (d.anuncio) out += d.anuncio + '\n';
+  if (d.esFactura && d.datosFiscales) out += '\n' + d.datosFiscales + '\n';
+  if (d.pie) out += d.pie + '\n';
   out += '\n\n\n' + CUT;
   return Buffer.from(out, 'ascii');
 }

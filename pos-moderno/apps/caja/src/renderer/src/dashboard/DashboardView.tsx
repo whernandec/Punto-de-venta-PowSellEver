@@ -52,7 +52,16 @@ export function DashboardView({ usuario, onIr, onSalir }: Props): JSX.Element {
           <button onClick={() => onIr('config')}>Configurar</button>
           <button className="nav--orange" onClick={() => onIr('compras')}>Comprar</button>
         </nav>
-        <span className="dash__user">👑 {usuario?.nombres ?? usuario?.login ?? 'Administrador'}</span>
+        <span className="dash__user">
+          {usuario?.foto ? (
+            <img className="dash__avatar" src={usuario.foto} alt="" />
+          ) : (
+            <span className="dash__avatar dash__avatar--ini">
+              {(usuario?.nombres ?? usuario?.login ?? 'A').trim().charAt(0).toUpperCase()}
+            </span>
+          )}
+          {usuario?.nombres ?? usuario?.login ?? 'Administrador'}
+        </span>
         <button className="dash__vender" onClick={() => onIr('ventas')}>Vender</button>
         {onSalir && <button className="dash__salir" onClick={onSalir}>Salir</button>}
       </div>

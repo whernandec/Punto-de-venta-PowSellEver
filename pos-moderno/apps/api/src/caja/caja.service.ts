@@ -6,6 +6,17 @@ import { AperturaCajaDto, CierreCajaDto } from './dto/caja.dto';
 export class CajaService {
   constructor(private readonly repo: CajaRepository) {}
 
+  principal() {
+    return this.repo.principal();
+  }
+
+  async actualizarPrincipal(descripcion: string) {
+    const c = await this.repo.principal();
+    if (!c) throw new ConflictException('No hay una caja registrada');
+    await this.repo.actualizarDescripcion(c.idCaja, descripcion);
+    return { idCaja: c.idCaja, descripcion };
+  }
+
   async abrir(dto: AperturaCajaDto) {
     const abierto = await this.repo.turnoAbierto(dto.idCaja);
     if (abierto) {

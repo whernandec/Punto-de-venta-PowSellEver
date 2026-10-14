@@ -20,6 +20,7 @@ import {
   MinLength,
 } from 'class-validator';
 import { PrismaService } from '../prisma/prisma.service';
+import { bufferAFoto, fotoABuffer } from '../common/foto';
 
 // --- DTOs ---
 export class CrearUsuarioDto {
@@ -28,6 +29,8 @@ export class CrearUsuarioDto {
   @IsString() @MinLength(4) password!: string;
   @IsOptional() @IsString() correo?: string;
   @IsOptional() @IsString() rol?: string;
+  /** Foto del cajero/admin como data URL (base64). */
+  @IsOptional() @IsString() foto?: string;
 }
 export class ActualizarUsuarioDto {
   @IsOptional() @IsString() nombres?: string;
@@ -35,6 +38,7 @@ export class ActualizarUsuarioDto {
   @IsOptional() @IsString() @MinLength(4) password?: string;
   @IsOptional() @IsString() correo?: string;
   @IsOptional() @IsString() rol?: string;
+  @IsOptional() @IsString() foto?: string;
 }
 
 // --- Service (lógica + guardas, nativo Prisma) ---
@@ -42,19 +46,34 @@ export class ActualizarUsuarioDto {
 export class UsuariosService {
   constructor(private readonly prisma: PrismaService) {}
 
-  listar() {
-    return this.prisma.usuario.findMany({
+  async listar() {
+    const rows = await this.prisma.usuario.findMany({
       where: { estado: 'ACTIVO' },
       select: {
         idUsuario: true,
         nombresApellidos: true,
         login: true,
+        password: true,
         correo: true,
         rol: true,
         estado: true,
+        icono: true,
+        nombreDeIcono: true,
       },
       orderBy: { idUsuario: 'asc' },
     });
+    // Normaliza al contrato de @pos/types (nombres) e incluye password para la
+    // grilla de administración (paridad con el sistema legacy; aún en texto plano).
+    return rows.map((r) => ({
+      idUsuario: r.idUsuario,
+      nombres: r.nombresApellidos,
+      login: r.login,
+      password: r.password,
+      correo: r.correo,
+      rol: r.rol,
+      estado: r.estado,
+      foto: bufferAFoto(r.icono, r.nombreDeIcono),
+    }));
   }
 
   async crear(dto: CrearUsuarioDto) {
@@ -64,6 +83,7 @@ export class UsuariosService {
     });
     if (dup) throw new ConflictException(`Ya existe un usuario con login ${dto.login}`);
 
+    const foto = fotoABuffer(dto.foto);
     const u = await this.prisma.usuario.create({
       data: {
         nombresApellidos: dto.nombres,
@@ -72,6 +92,7 @@ export class UsuariosService {
         correo: dto.correo ?? '',
         rol: dto.rol ?? 'Cajero',
         estado: 'ACTIVO',
+        ...(foto ? { icono: foto.buffer, nombreDeIcono: foto.mime } : {}),
       },
       select: { idUsuario: true, login: true },
     });
@@ -84,6 +105,7 @@ export class UsuariosService {
     });
     if (!existe) throw new NotFoundException(`Usuario ${id} no encontrado`);
 
+    const foto = fotoABuffer(dto.foto);
     await this.prisma.usuario.update({
       where: { idUsuario: id },
       data: {
@@ -92,6 +114,7 @@ export class UsuariosService {
         password: dto.password ?? undefined,
         correo: dto.correo ?? undefined,
         rol: dto.rol ?? undefined,
+        ...(foto ? { icono: foto.buffer, nombreDeIcono: foto.mime } : {}),
       },
     });
     return { actualizado: true, idUsuario: id };

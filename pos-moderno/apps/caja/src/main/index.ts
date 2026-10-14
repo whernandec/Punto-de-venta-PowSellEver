@@ -1,15 +1,60 @@
 import { app, BrowserWindow, ipcMain, shell } from 'electron';
 import { join } from 'path';
 import type { RegistrarVentaDTO } from '@pos/types';
+import { cargarConfig } from './config';
+import {
+  instalarPrincipal,
+  instalarSecundaria,
+  probarConexion,
+  type DatosAdmin,
+  type DatosEmpresa,
+  type DatosSql,
+} from './setup';
+import { detenerApiEmbebida, iniciarApiEmbebida } from './apiEmbebida';
 import { balanzaDisponible, leerPeso } from './hardware/balanza';
 import { imprimirPorRed, type DatosTicket } from './hardware/impresora';
 import {
   iniciarSyncAutomatico,
   listarPendientes,
   registrarVentaLocal,
+  setApiBase,
   setAuthToken,
   sincronizar,
 } from './sync/syncService';
+
+let config = cargarConfig();
+setApiBase(config.apiUrl);
+// El renderer obtiene la URL de la API y el estado de instalación al arrancar.
+ipcMain.on('config:get', (e) => {
+  e.returnValue = { apiUrl: config.apiUrl, instalado: config.instalado === true };
+});
+
+// ---- Asistente de primera ejecución ----
+ipcMain.handle('setup:probar', (_e, sql: DatosSql) => probarConexion(sql));
+
+ipcMain.handle(
+  'setup:instalarPrincipal',
+  async (
+    e,
+    datos: { sql: DatosSql; empresa: DatosEmpresa; admin: DatosAdmin },
+  ) => {
+    config = await instalarPrincipal({
+      ...datos,
+      puerto: config.puerto,
+      onProgreso: (etapa, hecho, total) =>
+        e.sender.send('setup:progreso', { etapa, hecho, total }),
+    });
+    setApiBase(config.apiUrl);
+    iniciarApiEmbebida(config); // modo local empaquetado: levanta la API ya con la BD lista
+    return { ok: true };
+  },
+);
+
+ipcMain.handle('setup:instalarSecundaria', (_e, apiUrl: string) => {
+  config = instalarSecundaria(apiUrl);
+  setApiBase(config.apiUrl);
+  return { ok: true };
+});
 
 function createWindow(): void {
   const win = new BrowserWindow({
@@ -70,6 +115,7 @@ ipcMain.handle('ventas:pendientes', () => listarPendientes());
 ipcMain.handle('ventas:sincronizar', () => sincronizar());
 
 app.whenReady().then(() => {
+  iniciarApiEmbebida(config); // modo local empaquetado: levanta la API embebida
   createWindow();
   iniciarSyncAutomatico(); // reintenta enviar ventas pendientes periódicamente
   app.on('activate', () => {
@@ -79,4 +125,8 @@ app.whenReady().then(() => {
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
+});
+
+app.on('before-quit', () => {
+  detenerApiEmbebida();
 });
